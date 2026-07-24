@@ -7,12 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "cf:migrate:local": "wrangler d1 migrations apply office-olympics-db --local",
-    "cf:migrate": "wrangler d1 migrations apply office-olympics-db --remote"
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "cf:migrate:local": "wrangler d1 migrations apply office --local",
+    "cf:migrate": "wrangler d1 migrations apply office --remote"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@fontsource/space-grotesk": "^5.3.0",
+    "@opennextjs/cloudflare": "^1.20.2",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.42.2",
     "howler": "^2.2.4",
@@ -26,7 +31,6 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.20.2",
     "@tailwindcss/postcss": "^4",
     "@types/canvas-confetti": "^1.9.0",
     "@types/howler": "^2.2.13",

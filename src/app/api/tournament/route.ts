@@ -1,16 +1,8 @@
-interface D1PreparedStatement {
-  bind: (...values: unknown[]) => D1PreparedStatement;
-  run: () => Promise<unknown>;
-}
-
-interface D1DatabaseLike {
-  prepare: (query: string) => D1PreparedStatement;
-}
+import { getDB } from "@/lib/d1";
 
 /**
- * Tournament sync API.
- * When deployed with OpenNext + Cloudflare D1, set env.DB.
- * Locally (no binding), requests succeed as no-ops so localStorage remains source of truth.
+ * Optional sync of classic (localStorage) tournament snapshots.
+ * Uses Cloudflare D1 when the DB binding is available; otherwise no-ops.
  */
 export async function POST(request: Request) {
   try {
@@ -20,13 +12,7 @@ export async function POST(request: Request) {
         ? body.id
         : "local-session";
 
-    // Cloudflare D1 binding via OpenNext cloudflare context (optional)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloudflare = (globalThis as any)[Symbol.for("cloudflare.context")] as
-      | { env?: { DB?: D1DatabaseLike } }
-      | undefined;
-    const db = cloudflare?.env?.DB;
-
+    const db = await getDB();
     if (db) {
       await db
         .prepare(

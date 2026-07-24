@@ -20,11 +20,11 @@ import {
   startSession,
   submitScore,
 } from "@/lib/sessionStore";
-import type { GameId } from "@/types/tournament";
+import type { GameId, TournamentSession } from "@/types/tournament";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-function payload(session: NonNullable<ReturnType<typeof getSession>>) {
+function payload(session: TournamentSession) {
   return {
     session: publicSession(session),
     leaderboard: getLeaderboard(session),
@@ -39,7 +39,7 @@ function payload(session: NonNullable<ReturnType<typeof getSession>>) {
 
 export async function GET(_request: Request, ctx: Ctx) {
   const { id } = await ctx.params;
-  const session = getSession(id);
+  const session = await getSession(id);
   if (!session) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -53,37 +53,37 @@ export async function PATCH(request: Request, ctx: Ctx) {
     const hostToken = (request.headers.get("x-host-token") || body.hostToken) as string;
     const action = body.action as string;
 
-    let session;
+    let session: TournamentSession;
     switch (action) {
       case "start":
-        session = startSession(id, hostToken);
+        session = await startSession(id, hostToken);
         break;
       case "set-game":
-        session = setCurrentGame(id, hostToken, body.gameId as GameId | null);
+        session = await setCurrentGame(id, hostToken, body.gameId as GameId | null);
         break;
       case "complete-game":
       case "next-game":
-        session = markGameComplete(id, hostToken, body.gameId as GameId | undefined);
+        session = await markGameComplete(id, hostToken, body.gameId as GameId | undefined);
         break;
       case "skip-turn":
       case "skip-remaining":
-        session = skipTurn(id, hostToken);
+        session = await skipTurn(id, hostToken);
         break;
       case "reset-game":
-        session = resetCurrentGame(id, hostToken);
+        session = await resetCurrentGame(id, hostToken);
         break;
       case "finish":
-        session = finishSession(id, hostToken);
+        session = await finishSession(id, hostToken);
         break;
       case "shuffle":
-        session = shuffleGames(id, hostToken);
+        session = await shuffleGames(id, hostToken);
         break;
       case "add-team": {
-        const s = getSession(id);
+        const s = await getSession(id);
         if (!s) throw new Error("Session not found");
         assertHost(s, hostToken);
-        addTeam(id, hostToken, body.name, body.emoji);
-        session = getSession(id)!;
+        await addTeam(id, hostToken, body.name, body.emoji);
+        session = (await getSession(id))!;
         break;
       }
       default:
@@ -103,7 +103,7 @@ export async function POST(request: Request, ctx: Ctx) {
   try {
     const body = await request.json();
     if (body.action === "score" || body.gameId) {
-      const session = submitScore(
+      const session = await submitScore(
         id,
         body.playerId as string,
         body.gameId as GameId,

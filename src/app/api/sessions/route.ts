@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     if (!body.mode || !body.pacing) {
       return NextResponse.json({ error: "mode and pacing required" }, { status: 400 });
     }
-    const session = createSession(body);
+    const session = await createSession(body);
     return NextResponse.json({
       session: publicSession(session),
       hostToken: session.hostToken,

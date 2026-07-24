@@ -11,6 +11,7 @@ import type {
   TournamentSession,
 } from "@/types/tournament";
 import { normalizeToThousand, clampRawScore } from "@/lib/normalizeScore";
+import { getDB } from "@/lib/d1";
 import { randomUUID } from "crypto";
 
 type Store = {
@@ -20,11 +21,20 @@ type Store = {
 
 const g = globalThis as unknown as { __ooSessions?: Store };
 
-function store(): Store {
+/** In-process fallback when D1 bindings are unavailable (plain Node scripts / build). */
+function memoryStore(): Store {
   if (!g.__ooSessions) {
     g.__ooSessions = { byId: new Map(), byCode: new Map() };
   }
   return g.__ooSessions;
+}
+
+function parseSession(payload: string): TournamentSession | null {
+  try {
+    return JSON.parse(payload) as TournamentSession;
+  } catch {
+    return null;
+  }
 }
 
 function makeJoinCode(): string {
@@ -40,11 +50,10 @@ function defaultSettings() {
   };
 }
 
-export function createSession(input: CreateSessionInput): TournamentSession {
+export async function createSession(input: CreateSessionInput): Promise<TournamentSession> {
   const id = randomUUID();
   let joinCode = makeJoinCode();
-  const s = store();
-  while (s.byCode.has(joinCode)) joinCode = makeJoinCode();
+  while (await getSessionByCode(joinCode)) joinCode = makeJoinCode();
 
   const session: TournamentSession = {
     id,
@@ -66,20 +75,35 @@ export function createSession(input: CreateSessionInput): TournamentSession {
     createdAt: Date.now(),
   };
 
-  s.byId.set(id, session);
-  s.byCode.set(joinCode, id);
+  await persist(session);
   return session;
 }
 
-export function getSession(id: string): TournamentSession | null {
-  return store().byId.get(id) ?? null;
+export async function getSession(id: string): Promise<TournamentSession | null> {
+  const db = await getDB();
+  if (db) {
+    const row = await db
+      .prepare(`SELECT payload FROM sessions WHERE id = ?`)
+      .bind(id)
+      .first<{ payload: string }>();
+    return row ? parseSession(row.payload) : null;
+  }
+  return memoryStore().byId.get(id) ?? null;
 }
 
-export function getSessionByCode(code: string): TournamentSession | null {
+export async function getSessionByCode(code: string): Promise<TournamentSession | null> {
   const normalized = code.trim().toUpperCase().replace(/\s+/g, "");
-  const id = store().byCode.get(normalized);
+  const db = await getDB();
+  if (db) {
+    const row = await db
+      .prepare(`SELECT payload FROM sessions WHERE join_code = ?`)
+      .bind(normalized)
+      .first<{ payload: string }>();
+    return row ? parseSession(row.payload) : null;
+  }
+  const id = memoryStore().byCode.get(normalized);
   if (!id) return null;
-  return store().byId.get(id) ?? null;
+  return memoryStore().byId.get(id) ?? null;
 }
 
 export function publicSession(session: TournamentSession) {
@@ -96,11 +120,11 @@ export function assertHost(session: TournamentSession, hostToken: string | null)
   }
 }
 
-export function joinSession(input: JoinSessionInput): {
+export async function joinSession(input: JoinSessionInput): Promise<{
   session: TournamentSession;
   player: Player;
-} {
-  const session = getSessionByCode(input.code);
+}> {
+  const session = await getSessionByCode(input.code);
   if (!session) throw new Error("Session not found");
   if (session.status === "finished") throw new Error("Tournament already finished");
   if (session.status === "active") {
@@ -148,13 +172,13 @@ export function joinSession(input: JoinSessionInput): {
   if (!session.turnOrder.includes(player.id)) {
     session.turnOrder.push(player.id);
   }
-  touch(session);
+  await persist(session);
   // Return token once — publicSession strips it from later polls
   return { session, player: { ...player, playerToken } };
 }
 
-export function startSession(sessionId: string, hostToken: string): TournamentSession {
-  const session = getSession(sessionId);
+export async function startSession(sessionId: string, hostToken: string): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   assertHost(session, hostToken);
   if (session.players.length < 1) throw new Error("Need at least one player");
@@ -173,7 +197,7 @@ export function startSession(sessionId: string, hostToken: string): TournamentSe
   session.currentPlayerId = null;
   session.endsAt = undefined;
 
-  touch(session);
+  await persist(session);
   return session;
 }
 
@@ -244,12 +268,12 @@ function advanceAfterGameComplete(session: TournamentSession, gameId: GameId) {
   beginGame(session, next);
 }
 
-export function setCurrentGame(
+export async function setCurrentGame(
   sessionId: string,
   hostToken: string,
   gameId: GameId | null,
-): TournamentSession {
-  const session = getSession(sessionId);
+): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   assertHost(session, hostToken);
   if (gameId) {
@@ -262,40 +286,40 @@ export function setCurrentGame(
     }
   }
   beginGame(session, gameId);
-  touch(session);
+  await persist(session);
   return session;
 }
 
-export function markGameComplete(
+export async function markGameComplete(
   sessionId: string,
   hostToken: string,
   gameId?: GameId | null,
-): TournamentSession {
-  const session = getSession(sessionId);
+): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   assertHost(session, hostToken);
   const target = gameId ?? session.currentGameId;
   if (!target) throw new Error("No active game");
   advanceAfterGameComplete(session, target);
-  touch(session);
+  await persist(session);
   return session;
 }
 
 /** Host skips waiting for remaining players and advances to the next game */
-export function skipTurn(sessionId: string, hostToken: string): TournamentSession {
-  const session = getSession(sessionId);
+export async function skipTurn(sessionId: string, hostToken: string): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   assertHost(session, hostToken);
   if (!session.currentGameId) throw new Error("No active game");
   const gameId = session.currentGameId;
   forfeitUnscoredPlayers(session, gameId);
   advanceAfterGameComplete(session, gameId);
-  touch(session);
+  await persist(session);
   return session;
 }
 
-export function finishSession(sessionId: string, hostToken: string): TournamentSession {
-  const session = getSession(sessionId);
+export async function finishSession(sessionId: string, hostToken: string): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   assertHost(session, hostToken);
   if (session.currentGameId) {
@@ -308,11 +332,11 @@ export function finishSession(sessionId: string, hostToken: string): TournamentS
   session.finishedAt = Date.now();
   session.currentGameId = null;
   session.currentPlayerId = null;
-  touch(session);
+  await persist(session);
   return session;
 }
 
-export function submitScore(
+export async function submitScore(
   sessionId: string,
   playerId: string,
   gameId: GameId,
@@ -320,8 +344,8 @@ export function submitScore(
   detail?: string,
   lowerIsBetter?: boolean,
   playerToken?: string,
-): TournamentSession {
-  const session = getSession(sessionId);
+): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   if (session.status !== "active" && session.status !== "finished") {
     throw new Error("Tournament not active");
@@ -387,13 +411,16 @@ export function submitScore(
   }
 
   // Host advances to the next game — scores alone do not unlock it
-  touch(session);
+  await persist(session);
   return session;
 }
 
 /** Clear scores for the live game so everyone can play it again */
-export function resetCurrentGame(sessionId: string, hostToken: string): TournamentSession {
-  const session = getSession(sessionId);
+export async function resetCurrentGame(
+  sessionId: string,
+  hostToken: string,
+): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   assertHost(session, hostToken);
   const gameId = session.currentGameId;
@@ -407,7 +434,7 @@ export function resetCurrentGame(sessionId: string, hostToken: string): Tourname
   }
   session.playedGames = session.playedGames.filter((g) => g !== gameId);
   session.currentPlayerId = null;
-  touch(session);
+  await persist(session);
   return session;
 }
 
@@ -489,13 +516,13 @@ export function getGameResultsSummaries(session: TournamentSession): GameResultS
     });
 }
 
-export function addTeam(
+export async function addTeam(
   sessionId: string,
   hostToken: string | null,
   name: string,
   emoji: string,
-): Team {
-  const session = getSession(sessionId);
+): Promise<Team> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   if (hostToken) assertHost(session, hostToken);
   if (session.mode !== "teams") throw new Error("Not team mode");
@@ -509,21 +536,21 @@ export function addTeam(
     color: TEAM_COLORS[session.teams.length % TEAM_COLORS.length]!,
   };
   session.teams.push(team);
-  touch(session);
+  await persist(session);
   return team;
 }
 
-export function assignPlayerTeam(
+export async function assignPlayerTeam(
   sessionId: string,
   playerId: string,
   teamId: string | undefined,
-): TournamentSession {
-  const session = getSession(sessionId);
+): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   const player = session.players.find((p) => p.id === playerId);
   if (!player) throw new Error("Player not found");
   player.teamId = teamId;
-  touch(session);
+  await persist(session);
   return session;
 }
 
@@ -537,9 +564,26 @@ function maybeFinish(session: TournamentSession) {
   }
 }
 
-function touch(session: TournamentSession) {
-  store().byId.set(session.id, session);
-  store().byCode.set(session.joinCode, session.id);
+async function persist(session: TournamentSession) {
+  const mem = memoryStore();
+  mem.byId.set(session.id, session);
+  mem.byCode.set(session.joinCode, session.id);
+
+  const db = await getDB();
+  if (db) {
+    await db
+      .prepare(
+        `INSERT INTO sessions (id, join_code, host_token, payload, updated_at)
+         VALUES (?, ?, ?, ?, datetime('now'))
+         ON CONFLICT(id) DO UPDATE SET
+           join_code = excluded.join_code,
+           host_token = excluded.host_token,
+           payload = excluded.payload,
+           updated_at = datetime('now')`,
+      )
+      .bind(session.id, session.joinCode, session.hostToken, JSON.stringify(session))
+      .run();
+  }
 }
 
 export function getParticipants(session: TournamentSession): PlayerOrTeam[] {
@@ -696,8 +740,11 @@ export function computeMvps(session: TournamentSession): MvpAward[] {
   return awards;
 }
 
-export function shuffleGames(sessionId: string, hostToken: string): TournamentSession {
-  const session = getSession(sessionId);
+export async function shuffleGames(
+  sessionId: string,
+  hostToken: string,
+): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
   if (!session) throw new Error("Session not found");
   assertHost(session, hostToken);
   if (session.status !== "lobby") {
@@ -709,6 +756,6 @@ export function shuffleGames(sessionId: string, hostToken: string): TournamentSe
     [order[i], order[j]] = [order[j]!, order[i]!];
   }
   session.gameOrder = order;
-  touch(session);
+  await persist(session);
   return session;
 }

@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     if (!body.code || !body.name) {
       return NextResponse.json({ error: "code and name required" }, { status: 400 });
     }
-    const { session, player } = joinSession(body);
+    const { session, player } = await joinSession(body);
     return NextResponse.json({
       session: publicSession(session),
       player,
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   if (!code) {
     return NextResponse.json({ error: "code required" }, { status: 400 });
   }
-  const session = getSessionByCode(code);
+  const session = await getSessionByCode(code);
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
