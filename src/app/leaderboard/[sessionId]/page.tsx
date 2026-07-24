@@ -114,34 +114,58 @@ export default function LiveLeaderboardPage({
       )}
 
       {session.status === "lobby" ? (
-        <PageItem>
-          <section className="card-surface mx-auto w-full max-w-2xl space-y-4">
-            <h2 className="font-display text-xl font-bold">
-              {session.mode === "teams" ? "Teams" : "Players"}
-            </h2>
-            {session.mode === "teams" ? (
-              <div className="space-y-4">
-                {session.teams.map((team) => {
-                  const members = session.players.filter((p) => p.teamId === team.id);
-                  return (
-                    <div key={team.id} className="rounded-2xl bg-white/[0.04] p-4">
-                      <div className="mb-3 flex items-center gap-2">
-                        <span className="text-2xl">{team.emoji}</span>
-                        <span
-                          className="font-display text-xl font-bold"
-                          style={{ color: team.color }}
-                        >
-                          {team.name}
-                        </span>
-                        <span className="ml-auto text-sm text-[var(--fg-muted)]">
-                          {members.length} player{members.length === 1 ? "" : "s"}
-                        </span>
+        <>
+          <PageItem>
+            <section className="card-surface mx-auto w-full max-w-2xl space-y-4">
+              <h2 className="font-display text-xl font-bold">
+                {session.mode === "teams" ? "Teams" : "Players"}
+              </h2>
+              {session.mode === "teams" ? (
+                <div className="space-y-4">
+                  {session.teams.map((team) => {
+                    const members = session.players.filter((p) => p.teamId === team.id);
+                    return (
+                      <div key={team.id} className="rounded-2xl bg-white/[0.04] p-4">
+                        <div className="mb-3 flex items-center gap-2">
+                          <span className="text-2xl">{team.emoji}</span>
+                          <span
+                            className="font-display text-xl font-bold"
+                            style={{ color: team.color }}
+                          >
+                            {team.name}
+                          </span>
+                          <span className="ml-auto text-sm text-[var(--fg-muted)]">
+                            {members.length} player{members.length === 1 ? "" : "s"}
+                          </span>
+                        </div>
+                        <ul className="space-y-2">
+                          {members.length === 0 ? (
+                            <li className="text-sm text-[var(--fg-muted)]">Waiting for players…</li>
+                          ) : (
+                            members.map((p) => (
+                              <li
+                                key={p.id}
+                                className="rounded-xl bg-white/[0.06] px-4 py-2.5 font-semibold"
+                              >
+                                {p.emoji ? `${p.emoji} ` : ""}
+                                {p.name}
+                              </li>
+                            ))
+                          )}
+                        </ul>
                       </div>
-                      <ul className="space-y-2">
-                        {members.length === 0 ? (
-                          <li className="text-sm text-[var(--fg-muted)]">Waiting for players…</li>
-                        ) : (
-                          members.map((p) => (
+                    );
+                  })}
+                  {(() => {
+                    const unassigned = session.players.filter((p) => !p.teamId);
+                    if (unassigned.length === 0) return null;
+                    return (
+                      <div className="rounded-2xl bg-white/[0.04] p-4">
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)]">
+                          Unassigned
+                        </p>
+                        <ul className="space-y-2">
+                          {unassigned.map((p) => (
                             <li
                               key={p.id}
                               className="rounded-xl bg-white/[0.06] px-4 py-2.5 font-semibold"
@@ -149,70 +173,44 @@ export default function LiveLeaderboardPage({
                               {p.emoji ? `${p.emoji} ` : ""}
                               {p.name}
                             </li>
-                          ))
-                        )}
-                      </ul>
-                    </div>
-                  );
-                })}
-                {(() => {
-                  const unassigned = session.players.filter((p) => !p.teamId);
-                  if (unassigned.length === 0) return null;
-                  return (
-                    <div className="rounded-2xl bg-white/[0.04] p-4">
-                      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)]">
-                        Unassigned
-                      </p>
-                      <ul className="space-y-2">
-                        {unassigned.map((p) => (
-                          <li
-                            key={p.id}
-                            className="rounded-xl bg-white/[0.06] px-4 py-2.5 font-semibold"
-                          >
-                            {p.emoji ? `${p.emoji} ` : ""}
-                            {p.name}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })()}
-                {session.teams.length === 0 && session.players.length === 0 && (
-                  <p className="text-[var(--fg-muted)]">Waiting for teams and players…</p>
-                )}
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {session.players.map((p, i) => (
-                  <li
-                    key={p.id}
-                    className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3"
-                  >
-                    <span className="w-6 text-[var(--fg-muted)]">#{i + 1}</span>
-                    <span className="font-semibold">
-                      {p.emoji ? `${p.emoji} ` : ""}
-                      {p.name}
-                    </span>
-                  </li>
-                ))}
-                {session.players.length === 0 && (
-                  <li className="text-[var(--fg-muted)]">Waiting for players…</li>
-                )}
-              </ul>
-            )}
-          </section>
-        </PageItem>
-      ) : null}
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
+                  {session.teams.length === 0 && session.players.length === 0 && (
+                    <p className="text-[var(--fg-muted)]">Waiting for teams and players…</p>
+                  )}
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {session.players.map((p, i) => (
+                    <li
+                      key={p.id}
+                      className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3"
+                    >
+                      <span className="w-6 text-[var(--fg-muted)]">#{i + 1}</span>
+                      <span className="font-semibold">
+                        {p.emoji ? `${p.emoji} ` : ""}
+                        {p.name}
+                      </span>
+                    </li>
+                  ))}
+                  {session.players.length === 0 && (
+                    <li className="text-[var(--fg-muted)]">Waiting for players…</li>
+                  )}
+                </ul>
+              )}
+            </section>
+          </PageItem>
 
-      {session.status === "lobby" && (
-        <PageItem>
-          <div className="mx-auto w-full max-w-2xl">
-            <LobbyGamesList order={session.gameOrder} />
-          </div>
-        </PageItem>
-      )}
-
-      {session.status !== "lobby" ? (
+          <PageItem>
+            <div className="mx-auto w-full max-w-2xl">
+              <LobbyGamesList order={session.gameOrder} />
+            </div>
+          </PageItem>
+        </>
+      ) : (
         <>
           <PageItem>
             <Podium top={board.slice(0, 3)} />
@@ -304,7 +302,7 @@ export default function LiveLeaderboardPage({
             </PageItem>
           )}
         </>
-      ) : null}
+      )}
 
       <PageItem className="flex flex-wrap items-center justify-center gap-3 pb-8">
         <Link href="/" className="btn-secondary">
