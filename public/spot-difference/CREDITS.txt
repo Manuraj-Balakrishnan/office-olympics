@@ -1,0 +1,9 @@
+Spot the Difference assets
+==========================
+
+cartoon-left.png / cartoon-right.png
+  Source: Wikimedia Commons — "Spot the difference.png"
+  https://commons.wikimedia.org/wiki/File:Spot_the_difference.png
+  Author: Muband (Japanese Wikipedia)
+  License: CC BY-SA 3.0 / GFDL
+  Split from the original side-by-side puzzle for this game.

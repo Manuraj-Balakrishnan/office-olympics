@@ -1,26 +1,285 @@
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/700.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Stadium night — black field, Olympic ring accents */
+  --bg: #000000;
+  --bg-elevated: #0c0c0c;
+  --bg-card: #121212;
+  --fg: #fafafa;
+  --fg-muted: #a1a1aa;
+  --border: rgb(255 255 255 / 0.1);
+  --border-strong: rgb(255 255 255 / 0.16);
+
+  /* Official-inspired Olympic rings */
+  --accent-blue: #0085c7;
+  --accent-yellow: #f4c300;
+  --accent-green: #009f3d;
+  --accent-red: #df0024;
+  --accent-black: #000000;
+
+  /* Gold medal primary */
+  --primary-from: #e6a817;
+  --primary-to: #f5d76e;
+  --primary-fg: #1a1200;
+  --ring: #f4c300;
+
+  --radius: 1.25rem;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  --glow-blue: color-mix(in srgb, var(--accent-blue) 28%, transparent);
+  --glow-yellow: color-mix(in srgb, var(--accent-yellow) 22%, transparent);
+  --glow-red: color-mix(in srgb, var(--accent-red) 18%, transparent);
+  --glow-green: color-mix(in srgb, var(--accent-green) 18%, transparent);
+}
+
+[data-theme="light"] {
+  /* Bright arena — white field */
+  --bg: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-card: #f4f4f5;
+  --fg: #0a0a0a;
+  --fg-muted: #71717a;
+  --border: rgb(0 0 0 / 0.08);
+  --border-strong: rgb(0 0 0 / 0.14);
+
+  --primary-from: #c9920a;
+  --primary-to: #e6a817;
+  --primary-fg: #1a1200;
+  --ring: #0085c7;
+
+  --glow-blue: color-mix(in srgb, var(--accent-blue) 12%, transparent);
+  --glow-yellow: color-mix(in srgb, var(--accent-yellow) 12%, transparent);
+  --glow-red: color-mix(in srgb, var(--accent-red) 10%, transparent);
+  --glow-green: color-mix(in srgb, var(--accent-green) 10%, transparent);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-card: var(--bg-card);
+  --color-elevated: var(--bg-elevated);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ring) 40%, transparent);
+  color: var(--fg);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.gradient-olympics {
+  background:
+    radial-gradient(ellipse 90% 55% at 15% 10%, var(--glow-blue), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 85% 8%, var(--glow-yellow), transparent 50%),
+    radial-gradient(ellipse 55% 45% at 75% 85%, var(--glow-red), transparent 50%),
+    radial-gradient(ellipse 50% 40% at 12% 80%, var(--glow-green), transparent 45%),
+    var(--bg);
+}
+
+.gradient-primary {
+  background-image: linear-gradient(135deg, var(--primary-from), var(--primary-to));
+}
+
+.text-gradient {
+  background: linear-gradient(
+    125deg,
+    var(--accent-blue) 0%,
+    var(--accent-yellow) 28%,
+    var(--accent-red) 55%,
+    var(--accent-green) 82%,
+    var(--accent-blue) 100%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-shift 8s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+.btn-primary {
+  @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl px-6 py-3 font-display text-lg font-bold shadow-lg transition duration-200 hover:scale-[1.03] hover:shadow-xl active:scale-[0.97];
+  color: var(--primary-fg);
+  background-image: linear-gradient(135deg, var(--primary-from), var(--primary-to));
+  box-shadow:
+    0 10px 30px -12px color-mix(in srgb, var(--primary-from) 65%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 20%, rgb(255 255 255 / 0.22) 50%, transparent 80%);
+  transform: translateX(-120%);
+  transition: transform 0.55s ease;
+}
+
+.btn-primary:hover::after {
+  transform: translateX(120%);
+}
+
+.btn-primary:disabled {
+  @apply cursor-not-allowed opacity-40 hover:scale-100;
+}
+
+.btn-primary:disabled::after {
+  display: none;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border px-5 py-3 font-display font-semibold text-[var(--fg)] backdrop-blur-md transition duration-200 hover:scale-[1.02] active:scale-[0.98];
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+}
+
+.btn-secondary:hover {
+  background: color-mix(in srgb, var(--fg) 10%, transparent);
+}
+
+.card-surface {
+  @apply relative rounded-2xl p-5 shadow-xl backdrop-blur-sm transition duration-300;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+  box-shadow:
+    0 20px 50px -28px rgb(0 0 0 / 0.55),
+    inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+.card-surface:hover {
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .card-surface {
+  @apply shadow-md;
+  box-shadow:
+    0 16px 40px -24px rgb(15 23 42 / 0.14),
+    inset 0 1px 0 rgb(255 255 255 / 0.9);
+}
+
+.input-field {
+  @apply w-full rounded-2xl px-4 py-3 outline-none transition duration-200 focus:border-transparent focus:ring-2 focus:ring-[var(--ring)];
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.perspective {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 5s ease-in-out 1s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ring) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 25%,
+    rgb(255 255 255 / 0.1) 50%,
+    rgb(255 255 255 / 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .text-gradient {
+    animation: none;
+  }
 }
