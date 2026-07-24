@@ -222,7 +222,7 @@ export const useTournamentStore = create<TournamentState>()(
 
       getLeaderboard: () => {
         const participants = get().getParticipants();
-        const { scores, lastGameScores } = get();
+        const { scores, lastGameScores, players } = get();
         return participants
           .map((participant) => {
             const total = scores
@@ -231,7 +231,31 @@ export const useTournamentStore = create<TournamentState>()(
             const lastDelta = lastGameScores
               .filter((s) => s.participantId === participant.id)
               .reduce((sum, s) => sum + s.score, 0);
-            return { participant, total, lastDelta };
+
+            let topPlayer:
+              | { id: string; name: string; emoji: string; total: number }
+              | undefined;
+            if (participant.kind === "team" && participant.memberIds?.length) {
+              const ranked = participant.memberIds
+                .map((memberId) => {
+                  const player = players.find((p) => p.id === memberId);
+                  if (!player) return null;
+                  const memberTotal = scores
+                    .filter((s) => s.playerId === memberId)
+                    .reduce((sum, s) => sum + s.score, 0);
+                  return {
+                    id: player.id,
+                    name: player.name,
+                    emoji: player.emoji ?? "🙋",
+                    total: memberTotal,
+                  };
+                })
+                .filter((row): row is NonNullable<typeof row> => row != null)
+                .sort((a, b) => b.total - a.total);
+              topPlayer = ranked[0];
+            }
+
+            return { participant, total, lastDelta, topPlayer };
           })
           .sort((a, b) => b.total - a.total);
       },

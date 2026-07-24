@@ -9,7 +9,7 @@ import { SpotTheDifference } from "@/games/SpotTheDifference";
 import { OneSecondChallenge } from "@/games/OneSecondChallenge";
 import { StroopChallenge } from "@/games/StroopChallenge";
 import { TypingRace } from "@/games/TypingRace";
-import { EmojiDecode } from "@/games/EmojiDecode";
+import { SpeedPuzzle } from "@/games/SpeedPuzzle";
 import { WordScramble } from "@/games/WordScramble";
 import { TriviaQuiz } from "@/games/TriviaQuiz";
 import { useTournamentStore } from "@/store/useTournamentStore";
@@ -23,7 +23,7 @@ const GAME_COMPONENTS: Record<GameId, React.ComponentType> = {
   "one-second": OneSecondChallenge,
   stroop: StroopChallenge,
   typing: TypingRace,
-  "emoji-decode": EmojiDecode,
+  "speed-puzzle": SpeedPuzzle,
   "word-scramble": WordScramble,
   trivia: TriviaQuiz,
 };

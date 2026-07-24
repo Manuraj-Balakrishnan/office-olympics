@@ -111,7 +111,7 @@ export function ReactionTest() {
               <p className="mb-3 text-lg font-semibold text-white/80">
                 {current?.emoji} {current?.name}
               </p>
-              <p className="font-display text-5xl font-extrabold text-white md:text-7xl">
+              <p className="font-display text-4xl font-extrabold text-white sm:text-5xl md:text-7xl">
                 {stage === "wait" && "Wait for it…"}
                 {stage === "go" && "CLICK NOW!"}
                 {stage === "too-soon" && "Too soon!"}

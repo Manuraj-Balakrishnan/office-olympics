@@ -16,7 +16,7 @@ export function ThemeToggle() {
     <button
       type="button"
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      className="btn-secondary !rounded-xl !px-3 !py-2"
+      className="header-control"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
     >
       {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}

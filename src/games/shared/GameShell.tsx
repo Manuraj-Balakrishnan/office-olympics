@@ -115,23 +115,28 @@ export function GameShell({
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4"
+        className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:py-4"
       >
-        {backHref ? (
-          <Link href={backHref} className="btn-secondary !py-2 text-sm">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Link>
-        ) : (
-          <div className="w-24" aria-hidden />
-        )}
-        <h1 className="font-display text-2xl font-extrabold md:text-3xl">{title}</h1>
-        {activeParticipant && phase === "playing" ? (
-          <div className="rounded-xl bg-white/5 px-3 py-2 text-sm backdrop-blur">
-            {activeParticipant.emoji} {activeParticipant.name}
-          </div>
-        ) : (
-          <div className="w-24" />
-        )}
+        <div className="flex items-center justify-between gap-3 sm:contents">
+          {backHref ? (
+            <Link href={backHref} className="btn-secondary !py-2 text-sm">
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Link>
+          ) : (
+            <div className="hidden w-24 sm:block" aria-hidden />
+          )}
+          {activeParticipant && phase === "playing" ? (
+            <div className="flex max-w-[50%] items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2 text-sm backdrop-blur sm:order-last sm:max-w-none">
+              <span className="shrink-0">{activeParticipant.emoji}</span>
+              <span className="truncate">{activeParticipant.name}</span>
+            </div>
+          ) : (
+            <div className="hidden w-24 sm:block" />
+          )}
+        </div>
+        <h1 className="text-center font-display text-xl font-extrabold sm:text-2xl md:text-3xl">
+          {title}
+        </h1>
       </motion.div>
 
       {phase === "playing" && !hideTimer && !results && (

@@ -11,7 +11,7 @@ export function ModeToggle() {
   const setMode = useTournamentStore((s) => s.setMode);
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {(
         [
           ["individuals", "Individuals", "Solo glory — every player scores alone"],
@@ -24,13 +24,13 @@ export function ModeToggle() {
           whileHover={{ y: -2 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setMode(value)}
-          className={`relative overflow-hidden rounded-2xl border p-5 text-left transition ${
+          className={`relative overflow-hidden rounded-2xl border p-4 text-left transition sm:p-5 ${
             mode === value
               ? "border-transparent gradient-primary text-white shadow-lg shadow-teal-500/25"
               : "border-white/10 bg-white/5 hover:bg-white/10"
           }`}
         >
-          <p className="font-display text-xl font-bold">{label}</p>
+          <p className="font-display text-lg font-bold sm:text-xl">{label}</p>
           <p className={`mt-1 text-sm ${mode === value ? "text-white/80" : "text-[var(--fg-muted)]"}`}>
             {desc}
           </p>
@@ -64,7 +64,7 @@ export function TeamForm() {
           </button>
         ))}
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -79,7 +79,7 @@ export function TeamForm() {
         />
         <button
           type="button"
-          className="btn-primary !px-4"
+          className="btn-primary sm:!px-4"
           onClick={() => {
             addTeam(name, emoji);
             setName("");

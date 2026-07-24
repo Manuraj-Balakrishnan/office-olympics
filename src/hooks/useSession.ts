@@ -7,6 +7,8 @@ export type LeaderboardRow = {
   participant: PlayerOrTeam;
   total: number;
   byGame: Record<string, number>;
+  /** Best individual on a team — set when participant.kind === "team" */
+  topPlayer?: { id: string; name: string; emoji: string; total: number };
 };
 
 export type GameScoreRow = {

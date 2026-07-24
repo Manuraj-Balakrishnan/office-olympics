@@ -13,6 +13,7 @@ import {
   OverallLeaderboard,
   PerGameTops,
 } from "@/components/session/ScoreBoards";
+import { FinishedResults } from "@/components/session/FinishedResults";
 import { useSound } from "@/hooks/useSound";
 import { PageEnter, PageItem } from "@/components/layout/PageEnter";
 import { LoadingPulse } from "@/components/layout/LoadingPulse";
@@ -40,6 +41,7 @@ export default function PlaySessionPage({
   const board = data?.leaderboard ?? [];
   const gameBoard = data?.gameScoreboard ?? [];
   const gameResults = data?.gameResults ?? [];
+  const mvps = data?.mvps ?? [];
   const roundComplete = Boolean(data?.roundComplete);
 
   const currentGame = session?.currentGameId ? GAME_MAP[session.currentGameId] : null;
@@ -98,6 +100,24 @@ export default function PlaySessionPage({
   const gameIndex = session.currentGameId
     ? session.gameOrder.indexOf(session.currentGameId) + 1
     : 0;
+
+  if (session.status === "finished") {
+    return (
+      <PageEnter>
+        <FinishedResults
+          joinCode={session.joinCode}
+          playerCount={session.players.length}
+          gameCount={session.gameOrder.length}
+          board={board}
+          games={gameResults}
+          sessionId={sessionId}
+          variant="player"
+          mvps={mvps}
+          highlightId={session.mode === "teams" ? me.teamId : me.id}
+        />
+      </PageEnter>
+    );
+  }
 
   if (canPlay && currentGame) {
     return <LoadingPulse label={`Starting ${currentGame.title}…`} />;
@@ -187,30 +207,13 @@ export default function PlaySessionPage({
         </PageItem>
       )}
 
-      {session.status === "finished" && (
-        <PageItem>
-          <div className="card-surface space-y-4 text-center">
-            <p className="font-display text-2xl font-bold text-gradient">Tournament complete</p>
-            <p className="text-[var(--fg-muted)]">Check the podium for final standings.</p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link href={`/leaderboard/${sessionId}`} className="btn-primary inline-flex text-xl">
-                Final podium
-              </Link>
-              <Link href="/" className="btn-secondary inline-flex">
-                Home
-              </Link>
-            </div>
-          </div>
-        </PageItem>
-      )}
-
       {session.status === "active" && currentGame && (
         <PageItem>
           <CurrentGameScores title="This game" rows={gameBoard} highlightId={playerId} />
         </PageItem>
       )}
 
-      {(session.status === "active" || session.status === "finished") && (
+      {session.status === "active" && (
         <PageItem>
           <PerGameTops games={gameResults} />
         </PageItem>

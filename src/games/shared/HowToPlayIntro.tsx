@@ -47,7 +47,7 @@ export function HowToPlayIntro({
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--fg-muted)]">
             How to play
           </p>
-          <h2 className="mt-2 font-display text-4xl font-extrabold md:text-5xl">
+          <h2 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl md:text-5xl">
             {game.title}
           </h2>
           <p className="mt-2 text-[var(--fg-muted)]">{game.description}</p>

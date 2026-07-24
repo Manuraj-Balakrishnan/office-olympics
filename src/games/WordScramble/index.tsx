@@ -22,6 +22,7 @@ export function WordScramble() {
   const [word, setWord] = useState(initial.word);
   const [scrambled, setScrambled] = useState(initial.scrambled);
   const [input, setInput] = useState("");
+  const [hintLetter, setHintLetter] = useState<string | null>(null);
   const [solved, setSolved] = useState(0);
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const participantsRef = useRef<ResultRow["participant"][]>([]);
@@ -42,6 +43,15 @@ export function WordScramble() {
     finishRef.current?.();
   };
 
+  const advance = () => {
+    const nxt = nextWord(used);
+    setUsed(new Set([...used, nxt.word]));
+    setWord(nxt.word);
+    setScrambled(nxt.scrambled);
+    setInput("");
+    setHintLetter(null);
+  };
+
   const submit = () => {
     if (finalized.current) return;
     if (input.trim().toUpperCase() === word) {
@@ -49,14 +59,24 @@ export function WordScramble() {
       const n = solvedRef.current + 1;
       solvedRef.current = n;
       setSolved(n);
-      const nxt = nextWord(used);
-      setUsed(new Set([...used, nxt.word]));
-      setWord(nxt.word);
-      setScrambled(nxt.scrambled);
-      setInput("");
+      advance();
     } else {
       play("wrong");
     }
+  };
+
+  const pass = () => {
+    if (finalized.current) return;
+    play("click");
+    advance();
+  };
+
+  const useHint = () => {
+    if (finalized.current || hintLetter) return;
+    play("click");
+    const first = word[0]!;
+    setHintLetter(first);
+    setInput((prev) => (prev.length === 0 ? first : prev));
   };
 
   return (
@@ -96,6 +116,11 @@ export function WordScramble() {
                 </motion.span>
               ))}
             </div>
+            {hintLetter && (
+              <p className="text-sm font-semibold text-[var(--fg-muted)]">
+                Starts with <span className="font-display text-lg text-[var(--ring)]">{hintLetter}</span>
+              </p>
+            )}
             <input
               value={input}
               onChange={(e) => setInput(e.target.value.toUpperCase())}
@@ -107,9 +132,22 @@ export function WordScramble() {
               autoFocus
               autoCapitalize="characters"
             />
-            <button type="button" className="btn-primary" onClick={submit}>
-              Check
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button type="button" className="btn-primary" onClick={submit}>
+                Check
+              </button>
+              <button
+                type="button"
+                className="btn-secondary text-sm disabled:opacity-50"
+                disabled={!!hintLetter}
+                onClick={useHint}
+              >
+                {hintLetter ? "Hint used" : "Hint · first letter"}
+              </button>
+              <button type="button" className="btn-secondary" onClick={pass}>
+                Pass
+              </button>
+            </div>
             <button
               type="button"
               className="btn-secondary text-sm"

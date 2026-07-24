@@ -121,9 +121,9 @@ export function SimonPattern() {
         if (results || phase !== "playing") return null;
 
         return (
-          <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-8 px-4 py-6">
-            <p className="text-center text-lg text-[var(--fg-muted)]">{status}</p>
-            <p className="font-display text-3xl font-bold">Score: {score}</p>
+          <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-6 px-4 py-6 sm:gap-8">
+            <p className="text-center text-base text-[var(--fg-muted)] sm:text-lg">{status}</p>
+            <p className="font-display text-2xl font-bold sm:text-3xl">Score: {score}</p>
 
             {sequence.length === 0 && (
               <button
@@ -138,14 +138,14 @@ export function SimonPattern() {
               </button>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="mx-auto grid w-full max-w-[min(100%,20rem)] grid-cols-2 gap-3 sm:max-w-none sm:w-auto sm:gap-4">
               {COLORS.map((c) => (
                 <motion.button
                   key={c.id}
                   type="button"
                   whileTap={{ scale: 0.92 }}
                   onClick={() => onPad(c.id, participants)}
-                  className={`h-32 w-32 rounded-3xl md:h-40 md:w-40 ${c.bg} shadow-2xl transition ${
+                  className={`aspect-square w-full rounded-3xl sm:h-36 sm:w-36 md:h-40 md:w-40 ${c.bg} shadow-2xl transition ${
                     lit === c.id ? `scale-105 brightness-125 shadow-xl ${c.glow}` : "opacity-85"
                   }`}
                   aria-label={assistMode ? `Pad ${c.id + 1}` : `Color pad ${c.id + 1}`}

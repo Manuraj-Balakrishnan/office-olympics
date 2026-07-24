@@ -103,7 +103,7 @@ export function StroopChallenge() {
               initial={{ scale: 0.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 380, damping: 16 }}
-              className="font-display text-6xl font-extrabold md:text-8xl"
+              className="font-display text-5xl font-extrabold sm:text-6xl md:text-8xl"
               style={{ color: INK[trial.ink] }}
             >
               {trial.word}

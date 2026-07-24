@@ -13,7 +13,7 @@ export function MuteToggle() {
     <button
       type="button"
       aria-label={muted ? "Unmute sounds" : "Mute sounds"}
-      className="btn-secondary !rounded-xl !px-3 !py-2"
+      className="header-control"
       onClick={() => {
         const next = !muted;
         setMuted(next);

@@ -51,7 +51,7 @@ export default function HostCreatePage() {
       </PageItem>
 
       <PageItem>
-        <h1 className="font-display text-4xl font-extrabold md:text-5xl">
+        <h1 className="font-display text-3xl font-extrabold md:text-5xl">
           Host a tournament
         </h1>
         <p className="mt-2 text-[var(--fg-muted)]">

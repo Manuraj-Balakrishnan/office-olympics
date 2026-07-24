@@ -17,6 +17,10 @@ export function TriviaQuiz() {
   const [leftMs, setLeftMs] = useState(PER_QUESTION_MS);
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [locked, setLocked] = useState(false);
+  // Don't run the per-question clock during how-to / countdown — only once playing.
+  const [started, setStarted] = useState(false);
+  /** Option indices removed by the 50/50 hint (reset each question). */
+  const [hiddenOpts, setHiddenOpts] = useState<number[]>([]);
   const scoreRef = useRef(0);
   const correctRef = useRef(0);
   const indexRef = useRef(0);
@@ -26,6 +30,7 @@ export function TriviaQuiz() {
   const finalized = useRef(false);
 
   const q = questions[index];
+  const hintUsed = hiddenOpts.length > 0;
 
   const finalize = (finalScore: number) => {
     if (finalized.current) return;
@@ -54,13 +59,15 @@ export function TriviaQuiz() {
       setIndex(nextIndex);
       lockedRef.current = false;
       setLocked(false);
+      setHiddenOpts([]);
     }
   };
 
   useEffect(() => {
-    if (results || finalized.current || !q) return;
+    if (!started || results || finalized.current || !q) return;
     lockedRef.current = false;
     setLocked(false);
+    setHiddenOpts([]);
     setLeftMs(PER_QUESTION_MS);
     const start = Date.now();
     const id = setInterval(() => {
@@ -78,16 +85,30 @@ export function TriviaQuiz() {
     }, 50);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, results]);
+  }, [started, index, results]);
+
+  const useHint = () => {
+    if (!q || lockedRef.current || finalized.current || hintUsed) return;
+    const wrong = q.options
+      .map((_, i) => i)
+      .filter((i) => i !== q.correctIndex)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 2);
+    play("click");
+    setHiddenOpts(wrong);
+  };
 
   const answer = (optIndex: number) => {
     if (lockedRef.current || !q || finalized.current) return;
+    if (hiddenOpts.includes(optIndex)) return;
     lockedRef.current = true;
     setLocked(true);
     const speedRatio = leftMs / PER_QUESTION_MS;
     if (optIndex === q.correctIndex) {
       play("correct");
-      const points = Math.round(100 + speedRatio * 100);
+      // Hint trims the max speed bonus a bit so using it isn't free points.
+      const bonusScale = hintUsed ? 0.7 : 1;
+      const points = Math.round(100 + speedRatio * 100 * bonusScale);
       setTimeout(() => advance(points), 300);
     } else {
       play("wrong");
@@ -100,18 +121,23 @@ export function TriviaQuiz() {
   return (
     <GameShell
       gameId="trivia"
-      title="Rapid-Fire Trivia"
-      durationSec={150}
+      title="Rapid-Fire Quiz"
+      durationSec={120}
       hideTimer
       results={
         results ? (
-          <ResultsScreen gameId="trivia" title="Rapid-Fire Trivia" results={results} />
+          <ResultsScreen gameId="trivia" title="Rapid-Fire Quiz" results={results} />
         ) : undefined
       }
     >
-      {({ participants, finish }) => {
+      {({ participants, finish, phase }) => {
         participantsRef.current = participants;
         finishRef.current = finish;
+        // GameShell only invokes children once playing — arm the clock then.
+        // Defer setState so we don't update TriviaQuiz while GameShell is rendering.
+        if (phase === "playing" && !started) {
+          queueMicrotask(() => setStarted(true));
+        }
         if (results || !q) return null;
 
         return (
@@ -157,21 +183,35 @@ export function TriviaQuiz() {
             <h2 className="text-center font-display text-2xl font-bold md:text-3xl">
               {q.question}
             </h2>
+            <button
+              type="button"
+              disabled={locked || hintUsed}
+              onClick={useHint}
+              className="btn-secondary !py-2 text-sm disabled:opacity-50"
+            >
+              {hintUsed ? "Hint used" : "Hint · remove 2"}
+            </button>
             <div className="grid w-full gap-3 sm:grid-cols-2">
-              {q.options.map((opt, i) => (
-                <button
-                  key={opt}
-                  type="button"
-                  disabled={locked}
-                  onClick={() => answer(i)}
-                  className="btn-secondary !justify-start !rounded-2xl !px-5 !py-4 text-left text-lg disabled:opacity-60"
-                >
-                  <span className="mr-3 font-display text-[var(--fg-muted)]">
-                    {String.fromCharCode(65 + i)}
-                  </span>
-                  {opt}
-                </button>
-              ))}
+              {q.options.map((opt, i) => {
+                const removed = hiddenOpts.includes(i);
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    disabled={locked || removed}
+                    onClick={() => answer(i)}
+                    aria-hidden={removed}
+                    className={`btn-secondary !justify-start !rounded-2xl !px-4 !py-3.5 text-left text-base disabled:opacity-60 sm:!px-5 sm:!py-4 sm:text-lg ${
+                      removed ? "pointer-events-none line-through opacity-30" : ""
+                    }`}
+                  >
+                    <span className="mr-3 shrink-0 font-display text-[var(--fg-muted)]">
+                      {String.fromCharCode(65 + i)}
+                    </span>
+                    <span className="min-w-0 text-wrap">{opt}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         );

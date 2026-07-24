@@ -20,14 +20,89 @@ import {
   saveIdentity,
   useSessionPoll,
   type GameScoreRow,
+  type LeaderboardRow,
 } from "@/hooks/useSession";
 import {
   GameProgressBar,
   OverallLeaderboard,
   PerGameTops,
 } from "@/components/session/ScoreBoards";
+import { FinishedResults } from "@/components/session/FinishedResults";
 import { PageEnter, PageItem } from "@/components/layout/PageEnter";
 import { LoadingPulse } from "@/components/layout/LoadingPulse";
+import type { GameId, Player, SessionStatus } from "@/types/tournament";
+
+function PlayerRosterRow({
+  player,
+  index,
+  sessionStatus,
+  currentGameId,
+  gameBoard,
+  board,
+  nested = false,
+}: {
+  player: Player;
+  index?: number;
+  sessionStatus: SessionStatus;
+  currentGameId: GameId | null;
+  gameBoard: GameScoreRow[];
+  board: LeaderboardRow[];
+  nested?: boolean;
+}) {
+  const row = gameBoard.find((r) => r.playerId === player.id);
+  const pending =
+    sessionStatus === "active" && Boolean(currentGameId) && row && !row.done;
+  const doneRound =
+    sessionStatus === "active" && Boolean(currentGameId) && row?.done;
+  const overall = board.find(
+    (b) => b.participant.id === player.id || b.participant.id === player.teamId,
+  );
+
+  return (
+    <li
+      className={`rounded-xl px-3 py-2.5 text-sm ${
+        pending
+          ? "bg-amber-500/10"
+          : doneRound
+            ? "bg-emerald-500/10"
+            : nested
+              ? "bg-white/[0.06]"
+              : "bg-white/5"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        {index != null && (
+          <span className="w-4 text-[var(--fg-muted)]">{index}</span>
+        )}
+        <span className="min-w-0 flex-1 truncate font-semibold">{player.name}</span>
+        {pending && (
+          <span className="text-[10px] font-bold uppercase text-amber-300">
+            playing
+          </span>
+        )}
+        {doneRound && (
+          <span className="text-[10px] font-bold uppercase text-emerald-400">
+            done
+          </span>
+        )}
+      </div>
+      {sessionStatus === "active" && (
+        <div
+          className={`mt-1 flex justify-between text-xs text-[var(--fg-muted)] ${
+            index != null ? "pl-5" : ""
+          }`}
+        >
+          <span>
+            {doneRound ? `Round ${row?.score}` : pending ? "…" : "—"}
+          </span>
+          <span className="font-semibold text-[var(--fg)]">
+            {overall?.total ?? 0} total
+          </span>
+        </div>
+      )}
+    </li>
+  );
+}
 
 function LiveRoundBoard({
   rows,
@@ -39,9 +114,9 @@ function LiveRoundBoard({
   const done = rows.filter((r) => r.done).length;
   return (
     <section className="card-surface !p-0 overflow-hidden">
-      <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-        <h2 className="font-display text-xl font-bold">{title}</h2>
-        <p className="text-sm font-semibold text-[var(--fg-muted)]">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5 sm:py-4">
+        <h2 className="min-w-0 truncate font-display text-lg font-bold sm:text-xl">{title}</h2>
+        <p className="shrink-0 text-sm font-semibold text-[var(--fg-muted)]">
           {done}/{rows.length} scored
         </p>
       </div>
@@ -53,7 +128,7 @@ function LiveRoundBoard({
           return (
             <li
               key={row.playerId}
-              className={`flex items-center gap-3 px-5 py-3 ${
+              className={`flex items-center gap-2 px-4 py-3 sm:gap-3 sm:px-5 ${
                 row.done ? "bg-emerald-500/[0.07]" : "bg-amber-500/[0.06]"
               }`}
             >
@@ -132,6 +207,7 @@ export default function HostSessionPage({
   const board = data?.leaderboard ?? [];
   const gameBoard = data?.gameScoreboard ?? [];
   const gameResults = data?.gameResults ?? [];
+  const mvps = data?.mvps ?? [];
 
   const run = async (action: string, body: Record<string, unknown> = {}) => {
     if (!hostToken) return;
@@ -196,6 +272,22 @@ export default function HostSessionPage({
         ? "Add or create a team before starting"
         : null;
 
+  if (session.status === "finished") {
+    return (
+      <PageEnter>
+        <FinishedResults
+          joinCode={session.joinCode}
+          playerCount={session.players.length}
+          gameCount={session.gameOrder.length}
+          board={board}
+          games={gameResults}
+          sessionId={sessionId}
+          mvps={mvps}
+        />
+      </PageEnter>
+    );
+  }
+
   return (
     <PageEnter className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 lg:flex-row">
       <div className="min-w-0 flex-1 space-y-6">
@@ -206,19 +298,13 @@ export default function HostSessionPage({
             <p className="text-sm font-semibold uppercase tracking-widest text-[var(--fg-muted)]">
               Host · {session.joinCode}
             </p>
-            <h1 className="font-display text-4xl font-extrabold tracking-tight">
-              {session.status === "lobby"
-                ? "Waiting room"
-                : session.status === "finished"
-                  ? "Final results"
-                  : "Control room"}
+            <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+              {session.status === "lobby" ? "Waiting room" : "Control room"}
             </h1>
             <p className="mt-1 text-sm text-[var(--fg-muted)]">
               {session.status === "lobby"
                 ? "Share the code. Start when everyone is in."
-                : session.status === "finished"
-                  ? "Tournament over — standings below."
-                  : "Everyone plays together. You advance each round."}
+                : "Everyone plays together. You advance each round."}
             </p>
           </div>
         </header>
@@ -230,7 +316,7 @@ export default function HostSessionPage({
           </div>
         )}
 
-        {session.status !== "lobby" && (
+        {session.status === "active" && (
           <GameProgressBar
             order={session.gameOrder}
             currentId={session.currentGameId}
@@ -241,14 +327,14 @@ export default function HostSessionPage({
         {/* Lobby join card */}
         {session.status === "lobby" && (
           <PageItem>
-          <section className="card-surface grid gap-6 md:grid-cols-[1fr_auto]">
-            <div>
+          <section className="card-surface grid gap-6 sm:grid-cols-[1fr_auto]">
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--fg-muted)]">Join code</p>
-              <p className="mt-1 font-display text-5xl font-extrabold tracking-wider text-gradient">
+              <p className="mt-1 break-all font-display text-4xl font-extrabold tracking-wider text-gradient sm:text-5xl">
                 {session.joinCode}
               </p>
               <p className="mt-3 break-all text-xs text-[var(--fg-muted)]">{joinUrl}</p>
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <button
                   type="button"
                   className="btn-secondary"
@@ -282,8 +368,8 @@ export default function HostSessionPage({
                 <p className="mt-2 text-sm text-amber-300">{startHint}</p>
               )}
             </div>
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-white p-4">
-              {joinUrl && <QRCodeSVG value={joinUrl} size={168} level="M" includeMargin />}
+            <div className="mx-auto flex w-fit flex-col items-center justify-center rounded-2xl bg-white p-3 sm:p-4">
+              {joinUrl && <QRCodeSVG value={joinUrl} size={148} level="M" includeMargin />}
               <p className="mt-2 text-xs font-semibold text-black/60">Scan to join</p>
             </div>
           </section>
@@ -294,20 +380,20 @@ export default function HostSessionPage({
         {session.status === "active" && currentGame && (
           <PageItem>
           <section className="overflow-hidden rounded-3xl border border-white/10 bg-[var(--bg-elevated)]">
-            <div className="bg-gradient-to-br from-teal-600/20 via-transparent to-slate-500/10 p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="bg-gradient-to-br from-teal-600/20 via-transparent to-slate-500/10 p-4 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--fg-muted)]">
                     Round {gameIndex} of {session.gameOrder.length}
                   </p>
-                  <h2 className="mt-1 font-display text-3xl font-extrabold md:text-4xl">
+                  <h2 className="mt-1 font-display text-2xl font-extrabold sm:text-3xl md:text-4xl">
                     {currentGame.title}
                   </h2>
-                  <p className="mt-2 max-w-xl text-[var(--fg-muted)]">
+                  <p className="mt-2 max-w-xl text-sm text-[var(--fg-muted)] sm:text-base">
                     {currentGame.description}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-black/25 px-5 py-4 text-center backdrop-blur">
+                <div className="w-full rounded-2xl bg-black/25 px-5 py-4 text-center backdrop-blur sm:w-auto">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--fg-muted)]">
                     Progress
                   </p>
@@ -340,7 +426,7 @@ export default function HostSessionPage({
                 )
               )}
 
-              <div className="mt-6 flex flex-wrap items-center gap-2">
+              <div className="mt-6 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                 {roundComplete ? (
                   isLastGame ? (
                     <button
@@ -359,8 +445,10 @@ export default function HostSessionPage({
                       onClick={() => void run("next-game")}
                     >
                       <Play className="h-4 w-4" />
-                      Start next game
-                      {nextGame ? `: ${nextGame.title}` : ""}
+                      <span className="truncate">
+                        Start next game
+                        {nextGame ? `: ${nextGame.title}` : ""}
+                      </span>
                     </button>
                   )
                 ) : (
@@ -427,18 +515,12 @@ export default function HostSessionPage({
         )}
 
         {/* Standings once */}
-        {(session.status === "active" || session.status === "finished") && (
-          <OverallLeaderboard
-            rows={board}
-            title={session.status === "finished" ? "Final standings" : "Overall standings"}
-          />
+        {session.status === "active" && (
+          <OverallLeaderboard rows={board} title="Overall standings" />
         )}
 
-        {(session.status === "active" || session.status === "finished") && (
-          <PerGameTops
-            games={gameResults}
-            showFullRankings={session.status === "finished"}
-          />
+        {session.status === "active" && (
+          <PerGameTops games={gameResults} />
         )}
 
         {/* Compact game order */}
@@ -454,7 +536,7 @@ export default function HostSessionPage({
                 return (
                   <li
                     key={gid}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm sm:gap-3 ${
                       isLive
                         ? "bg-teal-500/15 ring-1 ring-teal-400/40"
                         : done
@@ -462,14 +544,14 @@ export default function HostSessionPage({
                           : "bg-white/5"
                     }`}
                   >
-                    <span className="w-5 text-[var(--fg-muted)]">{i + 1}</span>
-                    <span className="flex-1 font-medium">{g.title}</span>
+                    <span className="w-5 shrink-0 text-[var(--fg-muted)]">{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate font-medium">{g.title}</span>
                     {top && done && (
-                      <span className="truncate text-xs text-[var(--fg-muted)]">
+                      <span className="hidden max-w-[40%] truncate text-xs text-[var(--fg-muted)] sm:inline">
                         {top.emoji} {top.name} {top.score}
                       </span>
                     )}
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--fg-muted)]">
+                    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--fg-muted)]">
                       {isLive ? "now" : done ? "done" : ""}
                     </span>
                   </li>
@@ -479,52 +561,12 @@ export default function HostSessionPage({
           </section>
         )}
 
-        {session.status === "finished" && (
-          <section className="card-surface space-y-5 text-center">
-            {board[0] && (
-              <>
-                <p className="text-sm font-semibold uppercase tracking-widest text-[var(--fg-muted)]">
-                  Champion
-                </p>
-                <p className="mt-2 text-5xl">{board[0].participant.emoji}</p>
-                <p className="mt-2 font-display text-3xl font-extrabold">
-                  {board[0].participant.name}
-                </p>
-                <p className="mt-1 text-[var(--fg-muted)]">{board[0].total} points</p>
-              </>
-            )}
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <Link href="/" className="btn-primary">
-                Home
-              </Link>
-              <Link href="/host" className="btn-secondary">
-                Host new tournament
-              </Link>
-              <Link href={`/leaderboard/${sessionId}`} className="btn-secondary">
-                Final podium
-              </Link>
-            </div>
-          </section>
-        )}
-
         {session.mode === "teams" && session.status === "lobby" && (
           <section className="card-surface space-y-3">
-            <h3 className="font-display text-lg font-bold">Teams</h3>
+            <h3 className="font-display text-lg font-bold">Add a team</h3>
             <p className="text-sm text-[var(--fg-muted)]">
-              Seed teams here, or let players create one when they join.
+              Seed teams here, or let players create one when they join. Roster is on the right.
             </p>
-            {session.teams.length > 0 && (
-              <ul className="flex flex-wrap gap-2">
-                {session.teams.map((t) => (
-                  <li
-                    key={t.id}
-                    className="rounded-xl bg-white/5 px-3 py-1.5 text-sm font-semibold"
-                  >
-                    {t.emoji} {t.name}
-                  </li>
-                ))}
-              </ul>
-            )}
             <div className="flex flex-wrap gap-2">
               {TEAM_EMOJIS.map((e) => (
                 <button
@@ -539,7 +581,7 @@ export default function HostSessionPage({
                 </button>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
@@ -548,7 +590,7 @@ export default function HostSessionPage({
               />
               <button
                 type="button"
-                className="btn-primary !px-4"
+                className="btn-primary sm:!px-4"
                 disabled={!teamName.trim() || busy}
                 onClick={() => {
                   void run("add-team", { name: teamName.trim(), emoji: teamEmoji });
@@ -567,61 +609,96 @@ export default function HostSessionPage({
         <section className="card-surface">
           <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
             <Users className="h-5 w-5" />
-            Players
+            {session.mode === "teams" ? "Teams" : "Players"}
             <span className="text-[var(--fg-muted)]">({session.players.length})</span>
           </h3>
-          <ul className="max-h-[32rem] space-y-2 overflow-auto">
-            {session.players.map((p, i) => {
-              const row = gameBoard.find((r) => r.playerId === p.id);
-              const pending =
-                session.status === "active" && Boolean(session.currentGameId) && row && !row.done;
-              const doneRound =
-                session.status === "active" && Boolean(session.currentGameId) && row?.done;
-              const overall = board.find(
-                (b) => b.participant.id === p.id || b.participant.id === p.teamId,
-              );
-              return (
-                <li
-                  key={p.id}
-                  className={`rounded-xl px-3 py-2.5 text-sm ${
-                    pending
-                      ? "bg-amber-500/10"
-                      : doneRound
-                        ? "bg-emerald-500/10"
-                        : "bg-white/5"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 text-[var(--fg-muted)]">{i + 1}</span>
-                    <span className="min-w-0 flex-1 truncate font-semibold">{p.name}</span>
-                    {pending && (
-                      <span className="text-[10px] font-bold uppercase text-amber-300">
-                        playing
-                      </span>
-                    )}
-                    {doneRound && (
-                      <span className="text-[10px] font-bold uppercase text-emerald-400">
-                        done
-                      </span>
-                    )}
-                  </div>
-                  {(session.status === "active" || session.status === "finished") && (
-                    <div className="mt-1 flex justify-between pl-5 text-xs text-[var(--fg-muted)]">
-                      <span>
-                        {doneRound ? `Round ${row?.score}` : pending ? "…" : "—"}
-                      </span>
-                      <span className="font-semibold text-[var(--fg)]">
-                        {overall?.total ?? 0} total
-                      </span>
+          <div className="max-h-[32rem] space-y-3 overflow-auto">
+            {session.mode === "teams" ? (
+              <>
+                {session.teams.map((team) => {
+                  const members = session.players.filter((p) => p.teamId === team.id);
+                  return (
+                    <div key={team.id} className="rounded-xl bg-white/[0.04] p-2.5">
+                      <div className="mb-2 flex items-center gap-2 px-1">
+                        <span className="text-lg" style={{ color: team.color }}>
+                          {team.emoji}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate font-display font-bold">
+                          {team.name}
+                        </span>
+                        <span className="text-xs text-[var(--fg-muted)]">
+                          {members.length}
+                        </span>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {members.length === 0 ? (
+                          <li className="px-2 py-1.5 text-xs text-[var(--fg-muted)]">
+                            No players yet
+                          </li>
+                        ) : (
+                          members.map((p) => (
+                            <PlayerRosterRow
+                              key={p.id}
+                              player={p}
+                              sessionStatus={session.status}
+                              currentGameId={session.currentGameId}
+                              gameBoard={gameBoard}
+                              board={board}
+                              nested
+                            />
+                          ))
+                        )}
+                      </ul>
                     </div>
-                  )}
-                </li>
-              );
-            })}
-            {session.players.length === 0 && (
-              <li className="text-sm text-[var(--fg-muted)]">Waiting for joins…</li>
+                  );
+                })}
+                {(() => {
+                  const unassigned = session.players.filter((p) => !p.teamId);
+                  if (unassigned.length === 0) return null;
+                  return (
+                    <div className="rounded-xl bg-white/[0.04] p-2.5">
+                      <div className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)]">
+                        Unassigned
+                      </div>
+                      <ul className="space-y-1.5">
+                        {unassigned.map((p) => (
+                          <PlayerRosterRow
+                            key={p.id}
+                            player={p}
+                            sessionStatus={session.status}
+                            currentGameId={session.currentGameId}
+                            gameBoard={gameBoard}
+                            board={board}
+                            nested
+                          />
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })()}
+                {session.teams.length === 0 && session.players.length === 0 && (
+                  <p className="text-sm text-[var(--fg-muted)]">Waiting for joins…</p>
+                )}
+              </>
+            ) : (
+              <ul className="space-y-2">
+                {session.players.map((p, i) => (
+                  <PlayerRosterRow
+                    key={p.id}
+                    player={p}
+                    index={i + 1}
+                    sessionStatus={session.status}
+                    currentGameId={session.currentGameId}
+                    gameBoard={gameBoard}
+                    board={board}
+                  />
+                ))}
+                {session.players.length === 0 && (
+                  <li className="text-sm text-[var(--fg-muted)]">Waiting for joins…</li>
+                )}
+              </ul>
             )}
-          </ul>
+          </div>
         </section>
       </aside>
     </PageEnter>

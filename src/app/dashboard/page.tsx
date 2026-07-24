@@ -9,7 +9,7 @@ import {
   Eye,
   Palette,
   Keyboard,
-  Sparkles,
+  Puzzle,
   Shuffle,
   HelpCircle,
   Check,
@@ -34,7 +34,7 @@ const ICONS: Record<string, LucideIcon> = {
   Eye,
   Palette,
   Keyboard,
-  Sparkles,
+  Puzzle,
   Shuffle,
   HelpCircle,
 };
@@ -56,14 +56,14 @@ export default function DashboardPage() {
   return (
     <PageEnter className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 lg:flex-row">
       <div className="min-w-0 flex-1 space-y-6">
-        <PageItem className="flex flex-wrap items-end justify-between gap-4">
+        <PageItem className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div>
-            <h1 className="font-display text-4xl font-extrabold">Host Dashboard</h1>
+            <h1 className="font-display text-3xl font-extrabold sm:text-4xl">Host Dashboard</h1>
             <p className="mt-1 text-[var(--fg-muted)]">
               Pick a game — or shuffle the order for surprise rounds.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <button
               type="button"
               className="btn-secondary"

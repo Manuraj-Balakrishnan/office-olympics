@@ -59,3 +59,17 @@ npm run deploy
 ```
 
 Or connect the GitHub repo in the Cloudflare dashboard (Workers → Create → connect repo) with build command `npx opennextjs-cloudflare build`.
+
+## Vercel (same Cloudflare D1)
+
+Vercel has no Workers bindings. Multiplayer still uses **Cloudflare D1** over the HTTP API.
+
+In the Vercel project → **Settings → Environment Variables**, add:
+
+| Name | Value |
+|------|--------|
+| `CLOUDFLARE_ACCOUNT_ID` | from `npx wrangler whoami` |
+| `CLOUDFLARE_API_TOKEN` | API token with **D1 Edit** |
+| `CLOUDFLARE_D1_DATABASE_ID` | `d6c48e9d-b2f7-4ad3-8c7e-1765f305c361` (your `office` DB) |
+
+Redeploy after saving. Host and join must both use the same deployment (don’t mix Vercel + Workers URLs unless both share these D1 credentials).

@@ -25,7 +25,7 @@ export default function SetupPage() {
   return (
     <PageEnter className="mx-auto w-full max-w-3xl space-y-10 px-4 py-10">
       <PageItem>
-        <h1 className="font-display text-4xl font-extrabold md:text-5xl">
+        <h1 className="font-display text-3xl font-extrabold md:text-5xl">
           Tournament Setup
         </h1>
         <p className="mt-2 text-[var(--fg-muted)]">
@@ -60,7 +60,7 @@ export default function SetupPage() {
           <section className="card-surface space-y-4">
             <h3 className="font-display text-xl font-bold">Game settings</h3>
             {mode === "teams" && (
-              <label className="flex items-center justify-between gap-4">
+              <label className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <span>
                   <span className="font-semibold">Team play style</span>
                   <span className="mt-0.5 block text-sm text-[var(--fg-muted)]">
@@ -74,7 +74,7 @@ export default function SetupPage() {
                       teamPlayMode: e.target.value as "everyone" | "one-rep",
                     })
                   }
-                  className="rounded-xl border border-white/10 bg-[var(--bg-elevated)] px-3 py-2"
+                  className="w-full rounded-xl border border-white/10 bg-[var(--bg-elevated)] px-3 py-2.5 sm:w-auto"
                 >
                   <option value="one-rep">One Rep Per Round</option>
                   <option value="everyone">Everyone Plays</option>
@@ -82,7 +82,7 @@ export default function SetupPage() {
               </label>
             )}
             <label className="flex items-center justify-between gap-4">
-              <span>
+              <span className="min-w-0">
                 <span className="font-semibold">Assist mode</span>
                 <span className="mt-0.5 block text-sm text-[var(--fg-muted)]">
                   Extra text labels for color-blind accessibility
@@ -92,12 +92,12 @@ export default function SetupPage() {
                 type="checkbox"
                 checked={settings.assistMode}
                 onChange={(e) => updateSettings({ assistMode: e.target.checked })}
-                className="h-5 w-5 accent-[var(--ring)]"
+                className="h-5 w-5 shrink-0 accent-[var(--ring)]"
               />
             </label>
             {mode === "teams" && (
               <label className="flex items-center justify-between gap-4">
-                <span>
+                <span className="min-w-0">
                   <span className="font-semibold">Team huddle timer</span>
                   <span className="mt-0.5 block text-sm text-[var(--fg-muted)]">
                     10s strategize before memory games
@@ -107,7 +107,7 @@ export default function SetupPage() {
                   type="checkbox"
                   checked={settings.huddleEnabled}
                   onChange={(e) => updateSettings({ huddleEnabled: e.target.checked })}
-                  className="h-5 w-5 accent-[var(--ring)]"
+                  className="h-5 w-5 shrink-0 accent-[var(--ring)]"
                 />
               </label>
             )}

@@ -34,9 +34,14 @@ assert(normalizeToThousand("stroop", 0) === 0, "stroop zero");
 assert(clampRawScore("typing", 99999) === 1500, "typing raw cap");
 assert(normalizeToThousand("typing", 1000) === 1000, "typing elite");
 
-// Emoji: slow perfect (10*70=700) < fast
-assert(normalizeToThousand("emoji-decode", 700) < 500, "emoji slow perfect");
-assert(normalizeToThousand("emoji-decode", 1800) === 1000, "emoji fast perfect");
+// Speed puzzle: faster complete time = higher points
+assert(normalizeToThousand("speed-puzzle", 20_000) === 1000, "puzzle elite");
+assert(
+  normalizeToThousand("speed-puzzle", 30_000) >
+    normalizeToThousand("speed-puzzle", 60_000),
+  "puzzle faster better",
+);
+assert(normalizeToThousand("speed-puzzle", 90_000) === 0, "puzzle slow floor");
 
 // Trivia
 assert(normalizeToThousand("trivia", 3000) === 1000, "trivia max");

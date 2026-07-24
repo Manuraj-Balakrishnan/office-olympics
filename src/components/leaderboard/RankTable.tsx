@@ -11,7 +11,47 @@ export function RankTable({
 }) {
   return (
     <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-[var(--bg-card)]/60 backdrop-blur-sm">
-      <table className="w-full text-left">
+      {/* Mobile: stacked cards */}
+      <motion.ul
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="divide-y divide-white/5 sm:hidden"
+      >
+        {rows.map((row, i) => (
+          <motion.li
+            key={row.participant.id}
+            variants={staggerItem}
+            className="flex items-center gap-3 px-4 py-3.5"
+          >
+            <span className="w-8 shrink-0 font-display text-sm font-bold text-[var(--fg-muted)]">
+              #{i + 1}
+            </span>
+            <span className="min-w-0 flex-1 truncate">
+              <span className="mr-1.5 text-xl">{row.participant.emoji}</span>
+              <span className="font-semibold">{row.participant.name}</span>
+            </span>
+            <div className="shrink-0 text-right">
+              <p
+                className="font-display text-lg font-extrabold"
+                style={{ color: row.participant.color }}
+              >
+                {row.total}
+              </p>
+              {row.lastDelta > 0 ? (
+                <span className="text-xs font-semibold text-emerald-400">
+                  +{row.lastDelta}
+                </span>
+              ) : (
+                <span className="text-xs text-[var(--fg-muted)]">—</span>
+              )}
+            </div>
+          </motion.li>
+        ))}
+      </motion.ul>
+
+      {/* Desktop: table */}
+      <table className="hidden w-full text-left sm:table">
         <thead className="bg-white/5 text-sm uppercase tracking-wide text-[var(--fg-muted)]">
           <tr>
             <th className="px-4 py-3">Rank</th>

@@ -582,7 +582,12 @@ async function persist(session: TournamentSession) {
 
   const db = await getDB();
   if (!db) {
-    // Plain Node scripts without Workers bindings — memory only
+    if (process.env.VERCEL) {
+      throw new Error(
+        "Cloudflare D1 is required on Vercel. Set CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, and CLOUDFLARE_D1_DATABASE_ID.",
+      );
+    }
+    // Plain Node scripts without bindings — memory only
     return;
   }
 
@@ -650,7 +655,36 @@ export function getLeaderboard(session: TournamentSession) {
         byGame.set(e.gameId, Math.max(prev, e.score));
       }
       const total = [...byGame.values()].reduce((a, b) => a + b, 0);
-      return { participant, total, byGame: Object.fromEntries(byGame) as Record<string, number> };
+
+      let topPlayer:
+        | { id: string; name: string; emoji: string; total: number }
+        | undefined;
+      if (participant.kind === "team" && participant.memberIds?.length) {
+        const ranked = participant.memberIds
+          .map((memberId) => {
+            const player = session.players.find((p) => p.id === memberId);
+            if (!player) return null;
+            const memberTotal = session.scores
+              .filter((s) => s.playerId === memberId)
+              .reduce((sum, s) => sum + s.score, 0);
+            return {
+              id: player.id,
+              name: player.name,
+              emoji: player.emoji ?? "🙋",
+              total: memberTotal,
+            };
+          })
+          .filter((row): row is NonNullable<typeof row> => row != null)
+          .sort((a, b) => b.total - a.total);
+        topPlayer = ranked[0];
+      }
+
+      return {
+        participant,
+        total,
+        byGame: Object.fromEntries(byGame) as Record<string, number>,
+        topPlayer,
+      };
     })
     .sort((a, b) => b.total - a.total);
 }
@@ -712,7 +746,7 @@ export function computeMvps(session: TournamentSession): MvpAward[] {
   if (trivia) {
     awards.push({
       id: "trivia-titan",
-      title: "Trivia Titan",
+      title: "Quiz Champ",
       description: "Top rapid-fire quiz score",
       playerId: trivia.player.id,
       playerName: trivia.player.name,

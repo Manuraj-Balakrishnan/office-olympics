@@ -12,7 +12,7 @@ export type GameId =
   | "one-second"
   | "stroop"
   | "typing"
-  | "emoji-decode"
+  | "speed-puzzle"
   | "word-scramble"
   | "trivia";
 

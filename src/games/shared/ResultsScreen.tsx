@@ -201,12 +201,12 @@ export function ResultsScreen({
   }, [sessionPlay, mine, postSessionScore]);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:py-8">
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-[var(--fg-muted)]">
           {submitted ? "Score submitted" : "Results"}
         </p>
-        <h2 className="mt-2 font-display text-4xl font-extrabold md:text-5xl">{title}</h2>
+        <h2 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl md:text-5xl">{title}</h2>
         {sessionPlay && !submitted && (
           <p className="mt-2 text-sm text-[var(--fg-muted)]">
             Sending your score to the host board…
@@ -217,27 +217,29 @@ export function ResultsScreen({
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {sorted.map((r, i) => {
           const barValue = lowerIsBetter ? 1 / Math.max(r.score, 1) : r.score;
           const width = Math.max(8, (barValue / max) * 100);
           const preview = normalizeToThousand(gameId, r.score, { lowerIsBetter });
           return (
-            <div key={r.participant.id} className="card-surface !p-4">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="font-display text-xl font-bold text-[var(--fg-muted)]">
+            <div key={r.participant.id} className="card-surface !p-3 sm:!p-4">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+                <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                  <span className="shrink-0 font-display text-lg font-bold text-[var(--fg-muted)] sm:text-xl">
                     #{i + 1}
                   </span>
-                  <span className="text-2xl">{r.participant.emoji}</span>
-                  <span className="font-display text-lg font-bold">{r.participant.name}</span>
+                  <span className="shrink-0 text-xl sm:text-2xl">{r.participant.emoji}</span>
+                  <span className="truncate font-display text-base font-bold sm:text-lg">
+                    {r.participant.name}
+                  </span>
                 </div>
                 <span
-                  className="font-display text-xl font-extrabold"
+                  className="shrink-0 font-display text-lg font-extrabold sm:text-xl"
                   style={{ color: r.participant.color }}
                 >
                   {lowerIsBetter ? `${r.score}ms` : r.score}
-                  <span className="ml-2 text-sm font-medium text-[var(--fg-muted)]">
+                  <span className="ml-2 text-xs font-medium text-[var(--fg-muted)] sm:text-sm">
                     → {preview}/1000
                   </span>
                 </span>

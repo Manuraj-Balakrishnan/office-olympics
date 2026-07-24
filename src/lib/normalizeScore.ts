@@ -22,8 +22,9 @@ export function clampRawScore(gameId: GameId, rawScore: number): number {
       return Math.max(0, Math.min(15, Math.round(n)));
     case "typing":
       return Math.max(0, Math.min(1500, Math.round(n)));
-    case "emoji-decode":
-      return Math.max(0, Math.min(2200, Math.round(n)));
+    case "speed-puzzle":
+      // Completion time in ms (or timeout penalty)
+      return Math.max(1, Math.min(180_000, Math.round(n)));
     case "word-scramble":
       return Math.max(0, Math.min(25, Math.round(n)));
     case "trivia":
@@ -39,12 +40,12 @@ export function clampRawScore(gameId: GameId, rawScore: number): number {
  * Raw units:
  * - reaction: milliseconds (lower better)
  * - simon: longest completed sequence length
- * - memory: matches*100 + move efficiency + clear bonus
- * - spot-difference: found*200 + clear bonus
+ * - memory: matches*100 + move efficiency + combo + clear/speed bonus
+ * - spot-difference: round((found/15)*1000) + speed clear bonus 0–100 (1100 max)
  * - one-second: answer points (≈100–200 per correct × 3)
  * - stroop: correct count 0–15
  * - typing: round(wpm * accuracy/100 * 10), wpm capped
- * - emoji-decode: puzzle points (base + speed)
+ * - speed-puzzle: completion time in ms (lower better)
  * - word-scramble: words solved
  * - trivia: quiz points (100–200 per correct × 15)
  */
@@ -69,7 +70,7 @@ export function normalizeToThousand(
       // Perfect clear ~950–1100 raw → scale to 1000
       return clamp((raw / 1100) * 1000);
     case "spot-difference":
-      // 5*200+100 = 1100
+      // Clear all 15 + full time left: 1000 + 100 = 1100
       return clamp((raw / 1100) * 1000);
     case "one-second":
       // 3 questions, ~100–200 each → max ~600
@@ -79,9 +80,11 @@ export function normalizeToThousand(
     case "typing":
       // ~100 WPM @ 100% → raw 1000; scale so ~83 WPM ≈ 1000 after *1.0
       return clamp(raw);
-    case "emoji-decode":
-      // Slow perfect ~700; fast perfect ~1500–2000 → differentiate speed
-      return clamp((raw / 1800) * 1000);
+    case "speed-puzzle": {
+      // Elite ~20s → 1000; 45s → ~650; 90s → ~0; incomplete uses high ms
+      const ms = Math.max(12_000, raw);
+      return clamp(1000 - (ms - 20_000) / 70);
+    }
     case "word-scramble":
       // ~12 words in 60s is elite
       return clamp((raw / 12) * 1000);

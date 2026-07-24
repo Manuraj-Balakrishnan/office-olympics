@@ -77,8 +77,8 @@ export function TypingRace() {
         if (results) return null;
 
         return (
-          <div className="mx-auto w-full max-w-3xl space-y-8 px-4 py-6">
-            <div className="flex justify-between font-display text-lg font-bold">
+          <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 sm:space-y-8">
+            <div className="flex justify-between gap-3 font-display text-base font-bold sm:text-lg">
               <span>{wpm} WPM</span>
               <span>{accuracy}% accuracy</span>
             </div>
@@ -94,7 +94,7 @@ export function TypingRace() {
               <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xl">🏁</div>
             </div>
 
-            <p className="rounded-2xl bg-white/5 p-5 font-display text-xl leading-relaxed tracking-wide md:text-2xl">
+            <p className="rounded-2xl bg-white/5 p-4 font-display text-lg leading-relaxed tracking-wide sm:p-5 sm:text-xl md:text-2xl">
               {sentence.split("").map((ch, i) => {
                 let color = "text-[var(--fg-muted)]";
                 if (i < input.length) {
@@ -116,9 +116,9 @@ export function TypingRace() {
                 if (!startedAt) setStartedAt(Date.now());
                 setInput(e.target.value);
               }}
-              className="w-full rounded-2xl border border-white/15 bg-[var(--bg-elevated)] px-5 py-4 font-mono text-lg outline-none ring-[var(--ring)] focus:ring-2"
+              className="w-full rounded-2xl border border-white/15 bg-[var(--bg-elevated)] px-4 py-3.5 font-mono text-base outline-none ring-[var(--ring)] focus:ring-2 sm:px-5 sm:py-4 sm:text-lg"
               placeholder="Start typing here…"
-              aria-label="Type the sentence"
+              aria-label="Type the paragraph"
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}

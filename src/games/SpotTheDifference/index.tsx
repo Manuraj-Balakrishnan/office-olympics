@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { GameShell } from "../shared/GameShell";
 import { ResultsScreen, type ResultRow } from "../shared/ResultsScreen";
-import { SPOT_DIFFERENCE_PAIRS } from "@/data/spotDifferenceConfig";
+import { SPOT_DIFFERENCE_PAIRS, hotspotZones } from "@/data/spotDifferenceConfig";
 import { useSound } from "@/hooks/useSound";
 import { Check, X } from "lucide-react";
 
@@ -22,18 +22,26 @@ export function SpotTheDifference() {
   const participantsRef = useRef<ResultRow["participant"][]>([]);
   const finishRef = useRef<(() => void) | null>(null);
   const foundRef = useRef<string[]>([]);
+  const remainingMsRef = useRef(pair.durationSec * 1000);
   const finalized = useRef(false);
 
-  const pointsPerFind = Math.floor(1000 / total);
-
-  const finalize = (count: number, cleared: boolean) => {
+  const finalize = (count: number, cleared: boolean, remainingMs?: number) => {
     if (finalized.current) return;
     finalized.current = true;
+    const left = Math.max(0, remainingMs ?? remainingMsRef.current);
+    const durationMs = pair.durationSec * 1000;
+    // Finds scale to 1000; clear bonus 0–100 from time left → 1100 max (normalizes to 1000)
+    const findScore = Math.round((count / total) * 1000);
+    const speedBonus = cleared ? Math.round((left / durationMs) * 100) : 0;
+    const score = findScore + speedBonus;
+    const elapsedSec = ((durationMs - left) / 1000).toFixed(1);
     setResults(
       participantsRef.current.map((p) => ({
         participant: p,
-        score: count * pointsPerFind + (cleared ? 100 : 0),
-        detail: `${count}/${total} found${cleared ? " · cleared" : ""}`,
+        score,
+        detail: cleared
+          ? `${count}/${total} found · ${elapsedSec}s`
+          : `${count}/${total} found`,
       })),
     );
     finishRef.current?.();
@@ -51,16 +59,18 @@ export function SpotTheDifference() {
     const y = (e.clientY - rect.top) / rect.height;
     if (x < 0 || y < 0 || x > 1 || y > 1) return;
 
-    // Nearest hotspot within its radius (extra slack for fat-finger taps)
+    // Nearest zone across all differences (supports multi-zone diffs like cat candy)
     let hit: (typeof pair.differences)[number] | null = null;
     let bestDist = Infinity;
     for (const d of pair.differences) {
       if (foundRef.current.includes(d.id)) continue;
-      const dist = Math.hypot(d.x - x, d.y - y);
-      const reach = d.radius * 1.25;
-      if (dist <= reach && dist < bestDist) {
-        bestDist = dist;
-        hit = d;
+      for (const z of hotspotZones(d)) {
+        const dist = Math.hypot(z.x - x, z.y - y);
+        const reach = z.radius * 1.25;
+        if (dist <= reach && dist < bestDist) {
+          bestDist = dist;
+          hit = d;
+        }
       }
     }
 
@@ -87,7 +97,7 @@ export function SpotTheDifference() {
       durationSec={pair.durationSec}
       onTimeUp={() => {
         const count = foundRef.current.length;
-        finalize(count, count >= total);
+        finalize(count, count >= total, 0);
       }}
       results={
         results ? (
@@ -99,20 +109,23 @@ export function SpotTheDifference() {
         ) : undefined
       }
     >
-      {({ participants, finish }) => {
+      {({ participants, finish, remainingMs }) => {
         participantsRef.current = participants;
         finishRef.current = finish;
+        remainingMsRef.current = remainingMs;
         if (results) return null;
 
         return (
-          <div className="mx-auto w-full max-w-6xl px-4 py-4">
+          <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-4">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="font-display text-xl font-bold">{pair.title}</h2>
-              <p className="font-display text-lg font-bold text-emerald-400">
+              <h2 className="min-w-0 truncate font-display text-lg font-bold sm:text-xl">
+                {pair.title}
+              </h2>
+              <p className="shrink-0 font-display text-base font-bold text-emerald-400 sm:text-lg">
                 {found.length}/{total} found
               </p>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
               <div className="overflow-hidden rounded-2xl border border-white/10">
                 <p className="bg-white/5 px-3 py-1 text-center text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)]">
                   Original
@@ -144,10 +157,10 @@ export function SpotTheDifference() {
                         key={d.id}
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="pointer-events-none absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg"
+                        className="pointer-events-none absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg sm:h-8 sm:w-8"
                         style={{ left: `${d.x * 100}%`, top: `${d.y * 100}%` }}
                       >
-                        <Check className="h-4 w-4" />
+                        <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </motion.span>
                     ) : null,
                   )}
@@ -169,7 +182,11 @@ export function SpotTheDifference() {
               type="button"
               className="btn-secondary mx-auto mt-6 block"
               onClick={() =>
-                finalize(foundRef.current.length, foundRef.current.length >= total)
+                finalize(
+                  foundRef.current.length,
+                  foundRef.current.length >= total,
+                  remainingMsRef.current,
+                )
               }
             >
               Submit score

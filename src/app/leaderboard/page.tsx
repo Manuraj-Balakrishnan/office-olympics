@@ -69,11 +69,11 @@ export default function LeaderboardPage() {
           >
             <Trophy className="mx-auto h-16 w-16 text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.45)]" />
           </motion.div>
-          <h1 className="mt-4 font-display text-5xl font-extrabold md:text-6xl">
+          <h1 className="mt-4 font-display text-4xl font-extrabold sm:text-5xl md:text-6xl">
             <span className="text-gradient">Champions!</span>
           </h1>
-          <p className="mt-3 text-2xl">
-            <span className="text-4xl">{winner.participant.emoji}</span>{" "}
+          <p className="mt-3 text-lg sm:text-2xl">
+            <span className="text-3xl sm:text-4xl">{winner.participant.emoji}</span>{" "}
             <span
               className="font-display font-bold"
               style={{ color: winner.participant.color }}
@@ -99,7 +99,7 @@ export default function LeaderboardPage() {
         <RankTable rows={board} />
       </PageItem>
 
-      <PageItem className="flex flex-wrap items-center justify-center gap-3">
+      <PageItem className="flex w-full flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         {!tournamentFinished && nextUnplayed && (
           <Link
             href={GAME_MAP[nextUnplayed].route}
