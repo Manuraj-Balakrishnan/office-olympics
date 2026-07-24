@@ -26,7 +26,7 @@ export function ModeToggle() {
           onClick={() => setMode(value)}
           className={`relative overflow-hidden rounded-2xl border p-5 text-left transition ${
             mode === value
-              ? "border-transparent gradient-primary text-[var(--primary-fg)] shadow-lg shadow-[color-mix(in_srgb,var(--primary-from)_40%,transparent)]"
+              ? "border-transparent gradient-primary text-white shadow-lg shadow-teal-500/25"
               : "border-white/10 bg-white/5 hover:bg-white/10"
           }`}
         >

@@ -33,7 +33,7 @@ export function Header() {
         <motion.span
           whileHover={{ rotate: -8, scale: 1.08 }}
           whileTap={{ scale: 0.95 }}
-          className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary text-[var(--primary-fg)] shadow-lg shadow-[color-mix(in_srgb,var(--primary-from)_45%,transparent)]"
+          className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary text-white shadow-lg shadow-teal-500/25"
         >
           <Trophy className="h-5 w-5" />
         </motion.span>

@@ -78,7 +78,7 @@ export default function HostCreatePage() {
                 onClick={() => setMode(value)}
                 className={`rounded-2xl border p-4 text-left transition ${
                   mode === value
-                    ? "border-transparent gradient-primary text-[var(--primary-fg)] shadow-lg shadow-[color-mix(in_srgb,var(--primary-from)_35%,transparent)]"
+                    ? "border-transparent gradient-primary text-white shadow-lg shadow-teal-500/20"
                     : "border-white/10 bg-white/5"
                 }`}
               >

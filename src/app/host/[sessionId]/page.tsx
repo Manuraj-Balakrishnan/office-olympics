@@ -294,7 +294,7 @@ export default function HostSessionPage({
         {session.status === "active" && currentGame && (
           <PageItem>
           <section className="overflow-hidden rounded-3xl border border-white/10 bg-[var(--bg-elevated)]">
-            <div className="bg-gradient-to-br from-[color-mix(in_srgb,var(--accent-blue)_30%,transparent)] via-transparent to-[color-mix(in_srgb,var(--accent-yellow)_12%,transparent)] p-6">
+            <div className="bg-gradient-to-br from-teal-600/20 via-transparent to-slate-500/10 p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--fg-muted)]">
@@ -456,7 +456,7 @@ export default function HostSessionPage({
                     key={gid}
                     className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${
                       isLive
-                        ? "bg-[color-mix(in_srgb,var(--accent-blue)_18%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent-blue)_45%,transparent)]"
+                        ? "bg-teal-500/15 ring-1 ring-teal-400/40"
                         : done
                           ? "opacity-60"
                           : "bg-white/5"

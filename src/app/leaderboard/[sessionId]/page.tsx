@@ -40,7 +40,7 @@ export default function LiveLeaderboardPage({
         particleCount: 180,
         spread: 100,
         origin: { y: 0.5 },
-        colors: ["#0085C7", "#F4C300", "#DF0024", "#009F3D", "#000000"],
+        colors: ["#0F766E", "#14B8A6", "#64748B", "#334155", "#F4F4F5"],
       });
     }
   }, [session, board.length, play]);

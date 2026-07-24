@@ -4,32 +4,25 @@ import { motion } from "framer-motion";
 
 const ORBS = [
   {
-    className: "left-[6%] top-[18%] h-40 w-40",
-    color: "var(--accent-blue)",
-    opacity: 0.28,
-    duration: 9,
+    className: "left-[8%] top-[12%] h-56 w-56",
+    color: "var(--primary-to)",
+    opacity: 0.18,
+    duration: 11,
     delay: 0,
   },
   {
-    className: "right-[8%] top-[22%] h-48 w-48",
-    color: "var(--accent-yellow)",
-    opacity: 0.22,
-    duration: 11,
-    delay: 1.2,
+    className: "right-[10%] top-[28%] h-44 w-44",
+    color: "var(--accent-2)",
+    opacity: 0.14,
+    duration: 13,
+    delay: 1.4,
   },
   {
-    className: "bottom-[16%] left-[22%] h-44 w-44",
-    color: "var(--accent-red)",
-    opacity: 0.2,
-    duration: 10,
-    delay: 0.6,
-  },
-  {
-    className: "bottom-[22%] right-[18%] h-36 w-36",
-    color: "var(--accent-green)",
-    opacity: 0.2,
+    className: "bottom-[18%] left-[30%] h-40 w-40",
+    color: "var(--primary-from)",
+    opacity: 0.12,
     duration: 12,
-    delay: 1.8,
+    delay: 0.8,
   },
 ] as const;
 
@@ -45,9 +38,9 @@ export function AmbientOrbs() {
           className={`absolute rounded-full blur-3xl ${orb.className}`}
           style={{ backgroundColor: orb.color, opacity: orb.opacity }}
           animate={{
-            y: [0, -18, 0, 12, 0],
-            x: [0, 10, -6, 4, 0],
-            scale: [1, 1.08, 0.96, 1.04, 1],
+            y: [0, -14, 0, 10, 0],
+            x: [0, 8, -5, 3, 0],
+            scale: [1, 1.06, 0.97, 1.03, 1],
           }}
           transition={{
             duration: orb.duration,
@@ -57,7 +50,7 @@ export function AmbientOrbs() {
           }}
         />
       ))}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_20%,var(--bg)_75%)] opacity-60" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_25%,var(--bg)_80%)] opacity-70" />
     </div>
   );
 }

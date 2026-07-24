@@ -7,41 +7,22 @@ import { useTournamentStore } from "@/store/useTournamentStore";
 import { PageEnter, PageItem } from "@/components/layout/PageEnter";
 import { fadeUp, springSoft } from "@/lib/motion";
 
-const RINGS = [
-  { color: "#0085c7" },
-  { color: "#f4c300" },
-  { color: "#111111" },
-  { color: "#009f3d" },
-  { color: "#df0024" },
-] as const;
-
 export default function HomePage() {
   const tournamentStarted = useTournamentStore((s) => s.tournamentStarted);
 
   return (
     <PageEnter className="relative flex flex-1 flex-col items-center justify-center px-6 py-16">
       <PageItem className="relative z-10 max-w-3xl text-center">
-        <div className="mb-8 flex items-center justify-center gap-1" aria-hidden>
-          {RINGS.map((ring, i) => (
-            <motion.span
-              key={ring.color}
-              className="inline-block h-8 w-8 rounded-full border-[3px] md:h-10 md:w-10"
-              style={{ borderColor: ring.color, marginLeft: i === 0 ? 0 : -10 }}
-              initial={{ opacity: 0, y: 12, scale: 0.8 }}
-              animate={{ opacity: 1, y: [0, -6, 0], scale: 1 }}
-              transition={{
-                opacity: { ...springSoft, delay: 0.08 * i },
-                scale: { ...springSoft, delay: 0.08 * i },
-                y: {
-                  duration: 2.8 + i * 0.15,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.2 * i,
-                },
-              }}
-            />
-          ))}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.88 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={springSoft}
+          className="mb-8 inline-flex items-center justify-center"
+        >
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary text-white shadow-lg shadow-teal-500/25 md:h-16 md:w-16">
+            <Trophy className="h-7 w-7 md:h-8 md:w-8" />
+          </span>
+        </motion.div>
 
         <motion.h1
           {...fadeUp}

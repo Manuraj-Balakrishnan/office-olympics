@@ -58,7 +58,7 @@ export function ResultsScreen({
       particleCount: 80,
       spread: 70,
       origin: { y: 0.65 },
-      colors: ["#0085C7", "#F4C300", "#DF0024", "#009F3D"],
+      colors: ["#0F766E", "#14B8A6", "#64748B", "#334155"],
     });
   }, [play]);
 

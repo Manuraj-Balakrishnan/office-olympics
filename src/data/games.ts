@@ -52,12 +52,12 @@ export const GAMES: GameDefinition[] = [
   {
     id: "spot-difference",
     title: "Spot the Difference",
-    description: "Find all 16 hidden differences in a classic cartoon illustration.",
+    description: "Find all 15 hidden differences in a classic cartoon illustration.",
     howToPlay: [
       "Compare the two cartoon pictures.",
       "Tap every difference on the right image.",
-      "There are 16 differences — find them all.",
-      "Clearing all 16 earns a bonus.",
+      "There are 15 differences — find them all.",
+      "Clearing all 15 earns a bonus.",
     ],
     icon: "Search",
     difficulty: "Medium",
@@ -168,21 +168,21 @@ export const GAME_MAP = Object.fromEntries(
 ) as Record<GameId, GameDefinition>;
 
 export const CATEGORY_COLORS: Record<GameDefinition["category"], string> = {
-  reflex: "from-[#df0024] to-[#f4c300]",
-  memory: "from-[#0085c7] to-[#009f3d]",
-  knowledge: "from-[#009f3d] to-[#f4c300]",
-  typing: "from-[#0085c7] to-[#df0024]",
+  reflex: "from-teal-600 to-cyan-500",
+  memory: "from-slate-600 to-slate-400",
+  knowledge: "from-emerald-700 to-teal-500",
+  typing: "from-sky-700 to-teal-500",
 };
 
 export const TEAM_COLORS = [
-  "#0085C7",
-  "#DF0024",
-  "#009F3D",
-  "#F4C300",
+  "#0F766E",
+  "#334155",
+  "#0369A1",
+  "#BE123C",
+  "#A16207",
   "#7C3AED",
-  "#EC4899",
-  "#0EA5E9",
-  "#F97316",
+  "#0E7490",
+  "#C2410C",
 ];
 
 export const TEAM_EMOJIS = ["🦁", "🐯", "🦅", "🐉", "🐺", "🦊", "🐻", "🦈"];

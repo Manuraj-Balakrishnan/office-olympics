@@ -7,57 +7,51 @@
 @import "tailwindcss";
 
 :root {
-  /* Stadium night — black field, Olympic ring accents */
+  /* Carbon & Teal — professional tournament UI */
   --bg: #000000;
-  --bg-elevated: #0c0c0c;
+  --bg-elevated: #0a0a0a;
   --bg-card: #121212;
-  --fg: #fafafa;
+  --fg: #f4f4f5;
   --fg-muted: #a1a1aa;
   --border: rgb(255 255 255 / 0.1);
-  --border-strong: rgb(255 255 255 / 0.16);
+  --border-strong: rgb(255 255 255 / 0.18);
 
-  /* Official-inspired Olympic rings */
-  --accent-blue: #0085c7;
-  --accent-yellow: #f4c300;
-  --accent-green: #009f3d;
-  --accent-red: #df0024;
-  --accent-black: #000000;
+  --primary-from: #0f766e;
+  --primary-to: #14b8a6;
+  --primary-fg: #ffffff;
+  --ring: #2dd4bf;
 
-  /* Gold medal primary */
-  --primary-from: #e6a817;
-  --primary-to: #f5d76e;
-  --primary-fg: #1a1200;
-  --ring: #f4c300;
+  --accent-1: #0f766e;
+  --accent-2: #64748b;
+  --accent-3: #334155;
+  --accent-soft: #99f6e4;
 
-  --radius: 1.25rem;
+  --radius: 1.15rem;
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
 
-  --glow-blue: color-mix(in srgb, var(--accent-blue) 28%, transparent);
-  --glow-yellow: color-mix(in srgb, var(--accent-yellow) 22%, transparent);
-  --glow-red: color-mix(in srgb, var(--accent-red) 18%, transparent);
-  --glow-green: color-mix(in srgb, var(--accent-green) 18%, transparent);
+  --glow-1: color-mix(in srgb, var(--primary-to) 22%, transparent);
+  --glow-2: color-mix(in srgb, var(--accent-2) 16%, transparent);
+  --glow-3: color-mix(in srgb, #ffffff 6%, transparent);
 }
 
 [data-theme="light"] {
-  /* Bright arena — white field */
   --bg: #ffffff;
   --bg-elevated: #ffffff;
   --bg-card: #f4f4f5;
-  --fg: #0a0a0a;
+  --fg: #09090b;
   --fg-muted: #71717a;
   --border: rgb(0 0 0 / 0.08);
   --border-strong: rgb(0 0 0 / 0.14);
 
-  --primary-from: #c9920a;
-  --primary-to: #e6a817;
-  --primary-fg: #1a1200;
-  --ring: #0085c7;
+  --primary-from: #0d9488;
+  --primary-to: #0f766e;
+  --primary-fg: #ffffff;
+  --ring: #0d9488;
 
-  --glow-blue: color-mix(in srgb, var(--accent-blue) 12%, transparent);
-  --glow-yellow: color-mix(in srgb, var(--accent-yellow) 12%, transparent);
-  --glow-red: color-mix(in srgb, var(--accent-red) 10%, transparent);
-  --glow-green: color-mix(in srgb, var(--accent-green) 10%, transparent);
+  --glow-1: color-mix(in srgb, var(--primary-from) 12%, transparent);
+  --glow-2: color-mix(in srgb, var(--accent-2) 8%, transparent);
+  --glow-3: color-mix(in srgb, #0f172a 4%, transparent);
 }
 
 @theme inline {
@@ -100,10 +94,9 @@ body {
 
 .gradient-olympics {
   background:
-    radial-gradient(ellipse 90% 55% at 15% 10%, var(--glow-blue), transparent 55%),
-    radial-gradient(ellipse 70% 45% at 85% 8%, var(--glow-yellow), transparent 50%),
-    radial-gradient(ellipse 55% 45% at 75% 85%, var(--glow-red), transparent 50%),
-    radial-gradient(ellipse 50% 40% at 12% 80%, var(--glow-green), transparent 45%),
+    radial-gradient(ellipse 80% 50% at 20% 0%, var(--glow-1), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, var(--glow-2), transparent 50%),
+    radial-gradient(ellipse 50% 35% at 50% 100%, var(--glow-3), transparent 55%),
     var(--bg);
 }
 
@@ -113,18 +106,29 @@ body {
 
 .text-gradient {
   background: linear-gradient(
-    125deg,
-    var(--accent-blue) 0%,
-    var(--accent-yellow) 28%,
-    var(--accent-red) 55%,
-    var(--accent-green) 82%,
-    var(--accent-blue) 100%
+    120deg,
+    #e4e4e7 0%,
+    var(--accent-soft) 45%,
+    var(--primary-to) 100%
   );
-  background-size: 220% auto;
+  background-size: 180% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: gradient-shift 8s ease-in-out infinite;
+  animation: gradient-shift 10s ease-in-out infinite;
+}
+
+[data-theme="light"] .text-gradient {
+  background: linear-gradient(
+    120deg,
+    #0f172a 0%,
+    #0f766e 55%,
+    #0d9488 100%
+  );
+  background-size: 180% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 @keyframes gradient-shift {
@@ -142,8 +146,8 @@ body {
   color: var(--primary-fg);
   background-image: linear-gradient(135deg, var(--primary-from), var(--primary-to));
   box-shadow:
-    0 10px 30px -12px color-mix(in srgb, var(--primary-from) 65%, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 0.35);
+    0 10px 30px -12px color-mix(in srgb, var(--primary-from) 55%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.2);
 }
 
 .btn-primary::after {

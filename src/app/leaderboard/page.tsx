@@ -38,7 +38,7 @@ export default function LeaderboardPage() {
       particleCount: tournamentFinished ? 160 : 90,
       spread: 90,
       origin: { y: 0.55 },
-      colors: ["#0085C7", "#F4C300", "#DF0024", "#009F3D", "#000000"],
+      colors: ["#0F766E", "#14B8A6", "#64748B", "#334155", "#F4F4F5"],
     });
   }, [board.length, tournamentFinished, play]);
 
