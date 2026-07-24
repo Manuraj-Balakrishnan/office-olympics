@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import type { GameId } from "@/types/tournament";
-import { GAME_MAP } from "@/data/games";
+import { resolveGame } from "@/data/games";
 
 const HOWTO_SECONDS = 10;
 
@@ -14,7 +14,7 @@ export function HowToPlayIntro({
   gameId: GameId;
   onComplete: () => void;
 }) {
-  const game = GAME_MAP[gameId];
+  const game = resolveGame(gameId);
   const [left, setLeft] = useState(HOWTO_SECONDS);
   const done = useRef(false);
 
@@ -25,6 +25,10 @@ export function HowToPlayIntro({
   };
 
   useEffect(() => {
+    if (!game) {
+      finish();
+      return;
+    }
     if (left <= 0) {
       finish();
       return;
@@ -32,7 +36,15 @@ export function HowToPlayIntro({
     const t = setTimeout(() => setLeft((n) => n - 1), 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [left]);
+  }, [left, game]);
+
+  if (!game) {
+    return (
+      <div className="mx-auto flex min-h-[40vh] items-center justify-center px-4 text-center text-[var(--fg-muted)]">
+        Unknown game — starting…
+      </div>
+    );
+  }
 
   const progress = ((HOWTO_SECONDS - left) / HOWTO_SECONDS) * 100;
 

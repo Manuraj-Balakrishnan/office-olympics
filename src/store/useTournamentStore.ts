@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
 const uuid = () => uuidv4();
-import { GAMES, TEAM_COLORS, TEAM_EMOJIS } from "@/data/games";
+import { GAMES, TEAM_COLORS, TEAM_EMOJIS, migrateGameId, sanitizeGameIds } from "@/data/games";
 import type {
   GameId,
   GameScoreEntry,
@@ -304,6 +304,25 @@ export const useTournamentStore = create<TournamentState>()(
         lastGameScores: s.lastGameScores,
       }),
       onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.gameOrder = sanitizeGameIds(state.gameOrder as string[]);
+          state.playedGames = sanitizeGameIds(state.playedGames as string[]);
+          state.scores = state.scores
+            .map((s) => {
+              const gameId = migrateGameId(s.gameId);
+              return gameId ? { ...s, gameId } : null;
+            })
+            .filter((s): s is NonNullable<typeof s> => s != null);
+          state.lastGameScores = state.lastGameScores
+            .map((s) => {
+              const gameId = migrateGameId(s.gameId);
+              return gameId ? { ...s, gameId } : null;
+            })
+            .filter((s): s is NonNullable<typeof s> => s != null);
+          if (state.currentGameIndex >= state.gameOrder.length) {
+            state.currentGameIndex = Math.max(0, state.gameOrder.length - 1);
+          }
+        }
         state?.setHydrated(true);
       },
     },

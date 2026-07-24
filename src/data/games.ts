@@ -170,6 +170,35 @@ export const GAME_MAP = Object.fromEntries(
   GAMES.map((g) => [g.id, g]),
 ) as Record<GameId, GameDefinition>;
 
+/** Legacy ids remapped after game roster changes (e.g. emoji-decode → speed-puzzle). */
+const LEGACY_GAME_IDS: Record<string, GameId> = {
+  "emoji-decode": "speed-puzzle",
+};
+
+export function migrateGameId(id: string): GameId | null {
+  if (id in GAME_MAP) return id as GameId;
+  return LEGACY_GAME_IDS[id] ?? null;
+}
+
+export function resolveGame(id: string | null | undefined): GameDefinition | null {
+  if (!id) return null;
+  const migrated = migrateGameId(id);
+  return migrated ? GAME_MAP[migrated] : null;
+}
+
+/** Drop unknown ids and remap legacy ones; keep order stable and unique. */
+export function sanitizeGameIds(ids: string[]): GameId[] {
+  const out: GameId[] = [];
+  const seen = new Set<GameId>();
+  for (const id of ids) {
+    const next = migrateGameId(id);
+    if (!next || seen.has(next)) continue;
+    seen.add(next);
+    out.push(next);
+  }
+  return out.length > 0 ? out : GAMES.map((g) => g.id);
+}
+
 export const CATEGORY_COLORS: Record<GameDefinition["category"], string> = {
   reflex: "from-teal-600 to-cyan-500",
   memory: "from-slate-600 to-slate-400",

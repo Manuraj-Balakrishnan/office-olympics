@@ -1,4 +1,11 @@
-import { GAMES, GAME_MAP, TEAM_COLORS, TEAM_EMOJIS } from "@/data/games";
+import {
+  GAMES,
+  GAME_MAP,
+  TEAM_COLORS,
+  TEAM_EMOJIS,
+  migrateGameId,
+  sanitizeGameIds,
+} from "@/data/games";
 import type {
   CreateSessionInput,
   GameId,
@@ -33,9 +40,30 @@ function memoryStore(): Store {
   return g.__ooSessions;
 }
 
+function normalizeSession(session: TournamentSession): TournamentSession {
+  session.gameOrder = sanitizeGameIds(session.gameOrder as string[]);
+  session.playedGames = sanitizeGameIds(session.playedGames as string[]);
+  if (session.currentGameId) {
+    session.currentGameId = migrateGameId(session.currentGameId);
+  }
+  session.scores = session.scores
+    .map((s) => {
+      const gameId = migrateGameId(s.gameId);
+      return gameId ? { ...s, gameId } : null;
+    })
+    .filter((s): s is NonNullable<typeof s> => s != null);
+  for (const player of session.players) {
+    if (player.completedGames) {
+      player.completedGames = sanitizeGameIds(player.completedGames as string[]);
+    }
+  }
+  return session;
+}
+
 function parseSession(payload: string): TournamentSession | null {
   try {
-    return JSON.parse(payload) as TournamentSession;
+    const session = JSON.parse(payload) as TournamentSession;
+    return normalizeSession(session);
   } catch {
     return null;
   }
@@ -101,7 +129,8 @@ export async function getSession(id: string): Promise<TournamentSession | null> 
   if (fromD1) return fromD1;
   // Only hit memory when D1 context is absent (Node scripts)
   if (await getDB()) return null;
-  return memoryStore().byId.get(id) ?? null;
+  const mem = memoryStore().byId.get(id);
+  return mem ? normalizeSession(structuredClone(mem)) : null;
 }
 
 export async function getSessionByCode(code: string): Promise<TournamentSession | null> {
@@ -114,7 +143,8 @@ export async function getSessionByCode(code: string): Promise<TournamentSession 
   if (await getDB()) return null;
   const id = memoryStore().byCode.get(normalized);
   if (!id) return null;
-  return memoryStore().byId.get(id) ?? null;
+  const mem = memoryStore().byId.get(id);
+  return mem ? normalizeSession(structuredClone(mem)) : null;
 }
 
 export function publicSession(session: TournamentSession) {
@@ -311,6 +341,7 @@ export async function markGameComplete(
   assertHost(session, hostToken);
   const target = gameId ?? session.currentGameId;
   if (!target) throw new Error("No active game");
+  forfeitUnscoredPlayers(session, target);
   advanceAfterGameComplete(session, target);
   await persist(session);
   return session;
@@ -356,74 +387,109 @@ export async function submitScore(
   lowerIsBetter?: boolean,
   playerToken?: string,
 ): Promise<TournamentSession> {
-  const session = await getSession(sessionId);
-  if (!session) throw new Error("Session not found");
-  if (session.status !== "active" && session.status !== "finished") {
-    throw new Error("Tournament not active");
-  }
-
-  const player = session.players.find((p) => p.id === playerId);
-  if (!player) throw new Error("Player not found");
-  if (player.playerToken) {
-    if (!playerToken || player.playerToken !== playerToken) {
-      throw new Error("Unauthorized player");
-    }
-  }
-
-  const existing = session.scores.find(
-    (s) => s.playerId === playerId && s.gameId === gameId,
-  );
-
-  const isLive = session.currentGameId === gameId && session.status === "active";
-  const isLate =
-    session.playedGames.includes(gameId) && (isForfeitScore(existing) || !existing);
-
-  if (!isLive && !isLate) {
-    if (existing && !isForfeitScore(existing)) {
-      throw new Error("Score already submitted");
-    }
-    throw new Error(
-      session.status === "finished"
-        ? "Tournament already finished"
-        : "This game is not active yet",
-    );
-  }
-
   if (!Number.isFinite(Number(rawScore))) {
     throw new Error("Invalid score");
   }
   const raw = clampRawScore(gameId, Number(rawScore));
 
-  // One score per player per game (overwrite while live, or overwrite forfeit after skip)
-  session.scores = session.scores.filter(
-    (s) => !(s.playerId === playerId && s.gameId === gameId),
-  );
+  // Retry + verify: concurrent D1 blob writes can overwrite each other
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    try {
+      const session = await getSession(sessionId);
+      if (!session) throw new Error("Session not found");
+      if (session.status !== "active" && session.status !== "finished") {
+        throw new Error("Tournament not active");
+      }
 
-  const normalized = normalizeToThousand(gameId, raw, { lowerIsBetter });
-  const participantId =
-    session.mode === "teams" && player.teamId ? player.teamId : player.id;
+      const player = session.players.find((p) => p.id === playerId);
+      if (!player) throw new Error("Player not found");
+      if (player.playerToken) {
+        if (!playerToken || player.playerToken !== playerToken) {
+          throw new Error("Unauthorized player");
+        }
+      }
 
-  const entry: GameScoreEntry = {
-    id: randomUUID(),
-    playerId,
-    participantId,
-    gameId,
-    score: normalized,
-    rawScore: raw,
-    lowerIsBetter,
-    detail,
-    timestamp: Date.now(),
-  };
-  session.scores.push(entry);
+      const existing = session.scores.find(
+        (s) => s.playerId === playerId && s.gameId === gameId,
+      );
 
-  if (!player.completedGames) player.completedGames = [];
-  if (!player.completedGames.includes(gameId)) {
-    player.completedGames.push(gameId);
+      const isLive = session.currentGameId === gameId && session.status === "active";
+      const isLate =
+        session.playedGames.includes(gameId) && (isForfeitScore(existing) || !existing);
+
+      if (!isLive && !isLate) {
+        if (existing && !isForfeitScore(existing)) {
+          throw new Error("Score already submitted");
+        }
+        throw new Error(
+          session.status === "finished"
+            ? "Tournament already finished"
+            : "This game is not active yet",
+        );
+      }
+
+      // One score per player per game (overwrite while live, or overwrite forfeit after skip)
+      session.scores = session.scores.filter(
+        (s) => !(s.playerId === playerId && s.gameId === gameId),
+      );
+
+      const normalized = normalizeToThousand(gameId, raw, { lowerIsBetter });
+      const participantId =
+        session.mode === "teams" && player.teamId ? player.teamId : player.id;
+
+      const entry: GameScoreEntry = {
+        id: randomUUID(),
+        playerId,
+        participantId,
+        gameId,
+        score: normalized,
+        rawScore: raw,
+        lowerIsBetter,
+        detail,
+        timestamp: Date.now(),
+      };
+      session.scores.push(entry);
+
+      if (!player.completedGames) player.completedGames = [];
+      if (!player.completedGames.includes(gameId)) {
+        player.completedGames.push(gameId);
+      }
+
+      await persist(session);
+
+      // Confirm our score survived a concurrent overwrite
+      const verify = await getSession(sessionId);
+      const landed = verify?.scores.find(
+        (s) =>
+          s.playerId === playerId &&
+          s.gameId === gameId &&
+          !isForfeitScore(s) &&
+          s.rawScore === raw,
+      );
+      if (landed && verify) return verify;
+
+      lastError = new Error("Score write conflict");
+      await new Promise((r) => setTimeout(r, 20 * (attempt + 1)));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error";
+      if (
+        msg === "Score already submitted" ||
+        msg === "Unauthorized player" ||
+        msg === "Player not found" ||
+        msg === "Session not found" ||
+        msg === "Tournament not active" ||
+        msg === "Tournament already finished" ||
+        msg === "This game is not active yet" ||
+        msg.startsWith("Invalid")
+      ) {
+        throw e;
+      }
+      lastError = e instanceof Error ? e : new Error(msg);
+      await new Promise((r) => setTimeout(r, 20 * (attempt + 1)));
+    }
   }
-
-  // Host advances to the next game — scores alone do not unlock it
-  await persist(session);
-  return session;
+  throw lastError ?? new Error("Failed to submit score");
 }
 
 /** Clear scores for the live game so everyone can play it again */
@@ -518,7 +584,7 @@ export function getGameResultsSummaries(session: TournamentSession): GameResultS
       const scored = rankings.filter((r) => r.done);
       return {
         gameId,
-        title: GAME_MAP[gameId].title,
+        title: GAME_MAP[gameId]?.title ?? gameId,
         isCurrent: session.currentGameId === gameId,
         isComplete: session.playedGames.includes(gameId),
         rankings,

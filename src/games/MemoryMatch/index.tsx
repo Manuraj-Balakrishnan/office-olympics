@@ -305,7 +305,7 @@ export function MemoryMatch() {
 
             {/* Board */}
             <div className="relative">
-              <div className="grid grid-cols-4 gap-2 sm:gap-3">
+              <div className="grid grid-cols-4 gap-2 [grid-template-columns:repeat(4,minmax(0,1fr))] sm:gap-3">
                 {cards.map((card, i) => {
                   const faceUp = card.flipped || card.matched;
                   const isSelected = selected.includes(i) && !card.matched;
@@ -322,7 +322,7 @@ export function MemoryMatch() {
                         stiffness: 320,
                         damping: 22,
                       }}
-                      className="perspective aspect-square min-h-[4.5rem] touch-manipulation outline-none sm:min-h-[5.5rem] md:min-h-[6.25rem]"
+                      className="perspective aspect-square min-h-0 min-w-0 w-full touch-manipulation outline-none"
                       disabled={lock || faceUp || finalized.current}
                       aria-label={
                         faceUp

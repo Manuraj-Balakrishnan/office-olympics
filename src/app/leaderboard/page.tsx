@@ -12,7 +12,7 @@ import { RankTable } from "@/components/leaderboard/RankTable";
 import { useTournamentStore } from "@/store/useTournamentStore";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useSound } from "@/hooks/useSound";
-import { GAME_MAP } from "@/data/games";
+import { resolveGame } from "@/data/games";
 import { PageEnter, PageItem } from "@/components/layout/PageEnter";
 
 export default function LeaderboardPage() {
@@ -100,15 +100,19 @@ export default function LeaderboardPage() {
       </PageItem>
 
       <PageItem className="flex w-full flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        {!tournamentFinished && nextUnplayed && (
-          <Link
-            href={GAME_MAP[nextUnplayed].route}
-            className="btn-primary text-lg"
-            onClick={() => play("click")}
-          >
-            Next Game: {GAME_MAP[nextUnplayed].title}
-          </Link>
-        )}
+        {!tournamentFinished && nextUnplayed && (() => {
+          const next = resolveGame(nextUnplayed);
+          if (!next) return null;
+          return (
+            <Link
+              href={next.route}
+              className="btn-primary text-lg"
+              onClick={() => play("click")}
+            >
+              Next Game: {next.title}
+            </Link>
+          );
+        })()}
         <Link href="/dashboard" className="btn-secondary">
           All Games
         </Link>

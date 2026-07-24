@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { MvpAward, PlayerOrTeam, TournamentSession } from "@/types/tournament";
 
 export type LeaderboardRow = {
@@ -97,9 +97,11 @@ export function useSessionPoll(sessionId: string | undefined, intervalMs = 1500)
   const [data, setData] = useState<SessionPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const requestId = useRef(0);
 
   const refresh = useCallback(async () => {
     if (!sessionId) return;
+    const id = ++requestId.current;
     try {
       const res = await fetch(`/api/sessions/${sessionId}`, { cache: "no-store" });
       if (!res.ok) {
@@ -107,12 +109,14 @@ export function useSessionPoll(sessionId: string | undefined, intervalMs = 1500)
         throw new Error(j.error || "Failed to load session");
       }
       const json = (await res.json()) as SessionPayload;
+      if (id !== requestId.current) return;
       setData(json);
       setError(null);
     } catch (e) {
+      if (id !== requestId.current) return;
       setError(e instanceof Error ? e.message : "Error");
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
   }, [sessionId]);
 

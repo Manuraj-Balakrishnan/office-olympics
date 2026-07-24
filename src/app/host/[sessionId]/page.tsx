@@ -13,7 +13,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { GAME_MAP, TEAM_EMOJIS } from "@/data/games";
+import { TEAM_EMOJIS, resolveGame } from "@/data/games";
 import {
   hostAction,
   loadIdentity,
@@ -250,7 +250,7 @@ export default function HostSessionPage({
   const gameIndex = session.currentGameId
     ? session.gameOrder.indexOf(session.currentGameId) + 1
     : session.playedGames.length;
-  const currentGame = session.currentGameId ? GAME_MAP[session.currentGameId] : null;
+  const currentGame = resolveGame(session.currentGameId);
   const doneThisGame = gameBoard.filter((r) => r.done).length;
   const waitingPlayers = gameBoard.filter((r) => !r.done);
   // Prefer live board counts so the CTA flips as soon as the last score lands
@@ -258,7 +258,7 @@ export default function HostSessionPage({
     Boolean(data?.roundComplete) ||
     (session.players.length > 0 && doneThisGame >= session.players.length);
   const nextGameId = data?.nextGameId as string | null | undefined;
-  const nextGame = nextGameId ? GAME_MAP[nextGameId as keyof typeof GAME_MAP] : null;
+  const nextGame = resolveGame(nextGameId);
   const isLastGame = Boolean(currentGame && !nextGameId);
 
   const canStart =
@@ -529,7 +529,8 @@ export default function HostSessionPage({
             <h3 className="mb-3 font-display text-lg font-bold">Upcoming</h3>
             <ol className="space-y-1.5">
               {session.gameOrder.map((gid, i) => {
-                const g = GAME_MAP[gid];
+                const g = resolveGame(gid);
+                if (!g) return null;
                 const isLive = session.currentGameId === gid;
                 const done = session.playedGames.includes(gid);
                 const top = gameResults.find((r) => r.gameId === gid)?.top[0];

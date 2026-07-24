@@ -195,8 +195,8 @@ export function ResultsScreen({
     if (!sessionPlay || !mine) return;
     return () => {
       if (submittedRef.current || inflightRef.current) return;
+      // Fire keepalive only — do not mark locked unless we already confirmed submit
       void postSessionScore({ keepalive: true });
-      sessionPlay.markScoreLocked();
     };
   }, [sessionPlay, mine, postSessionScore]);
 

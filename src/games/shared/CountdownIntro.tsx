@@ -1,8 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSound } from "@/hooks/useSound";
+
+const BEAT_MS = 1000;
+const GO_HOLD_MS = 600;
 
 export function CountdownIntro({
   onComplete,
@@ -11,17 +14,53 @@ export function CountdownIntro({
 }) {
   const [step, setStep] = useState(3);
   const { play } = useSound();
+  const onCompleteRef = useRef(onComplete);
+  const playRef = useRef(play);
 
   useEffect(() => {
-    if (step > 0) {
-      play("tick");
-      const t = setTimeout(() => setStep((s) => s - 1), 700);
-      return () => clearTimeout(t);
-    }
-    play("go");
-    const t = setTimeout(onComplete, 500);
-    return () => clearTimeout(t);
-  }, [step, onComplete, play]);
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    playRef.current = play;
+  }, [play]);
+
+  // Single mount-driven timeline — ignore parent re-renders / callback identity churn
+  useEffect(() => {
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    const schedule = (ms: number, fn: () => void) => {
+      timers.push(setTimeout(fn, ms));
+    };
+
+    // 3 → 2 → 1 at 1s beats, then GO, then start
+    playRef.current("tick");
+    schedule(BEAT_MS, () => {
+      if (cancelled) return;
+      setStep(2);
+      playRef.current("tick");
+    });
+    schedule(BEAT_MS * 2, () => {
+      if (cancelled) return;
+      setStep(1);
+      playRef.current("tick");
+    });
+    schedule(BEAT_MS * 3, () => {
+      if (cancelled) return;
+      setStep(0);
+      playRef.current("go");
+    });
+    schedule(BEAT_MS * 3 + GO_HOLD_MS, () => {
+      if (cancelled) return;
+      onCompleteRef.current();
+    });
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
+  }, []);
 
   const label = step > 0 ? String(step) : "GO!";
 

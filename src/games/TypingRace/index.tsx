@@ -83,10 +83,10 @@ export function TypingRace() {
               <span>{accuracy}% accuracy</span>
             </div>
 
-            <div className="relative h-10 rounded-full bg-white/10">
+            <div className="relative h-10 overflow-hidden rounded-full bg-white/10">
               <motion.div
-                className="absolute top-1/2 flex -translate-y-1/2 items-center"
-                animate={{ left: `calc(${progress * 100}% - 16px)` }}
+                className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center"
+                animate={{ left: `${Math.min(1, Math.max(0, progress)) * 100}%` }}
                 transition={{ type: "spring", stiffness: 200, damping: 20 }}
               >
                 <span className="text-2xl">🏃</span>
@@ -114,7 +114,7 @@ export function TypingRace() {
               onPaste={(e) => e.preventDefault()}
               onChange={(e) => {
                 if (!startedAt) setStartedAt(Date.now());
-                setInput(e.target.value);
+                setInput(e.target.value.slice(0, sentence.length));
               }}
               className="w-full rounded-2xl border border-white/15 bg-[var(--bg-elevated)] px-4 py-3.5 font-mono text-base outline-none ring-[var(--ring)] focus:ring-2 sm:px-5 sm:py-4 sm:text-lg"
               placeholder="Start typing here…"

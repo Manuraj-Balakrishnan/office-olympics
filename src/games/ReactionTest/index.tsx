@@ -21,6 +21,9 @@ export function ReactionTest() {
   const participantRef = useRef<PlayerOrTeam | null>(null);
   const finalized = useRef(false);
 
+  const falseStartTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const doneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const endWith = useCallback((score: number, detail: string, participant: PlayerOrTeam) => {
     if (finalized.current) return;
     finalized.current = true;
@@ -34,6 +37,8 @@ export function ReactionTest() {
       setCurrent(participant);
       setStage("wait");
       if (timer.current) clearTimeout(timer.current);
+      if (falseStartTimer.current) clearTimeout(falseStartTimer.current);
+      if (doneTimer.current) clearTimeout(doneTimer.current);
       const delay = 2000 + Math.random() * 3000;
       timer.current = setTimeout(() => {
         goAt.current = performance.now();
@@ -44,27 +49,36 @@ export function ReactionTest() {
     [play],
   );
 
-  const onTap = () => {
+  const onTap = (e?: React.PointerEvent | React.KeyboardEvent) => {
+    if (e && "button" in e && e.button !== 0) return;
     const participant = participantRef.current;
     if (!participant || finalized.current) return;
     if (stage === "wait") {
       if (timer.current) clearTimeout(timer.current);
       play("wrong");
       setStage("too-soon");
-      setTimeout(() => endWith(1200, "False start (+penalty)", participant), 800);
+      falseStartTimer.current = setTimeout(
+        () => endWith(1200, "False start (+penalty)", participant),
+        800,
+      );
       return;
     }
     if (stage === "go") {
       const ms = Math.max(1, Math.round(performance.now() - goAt.current));
       play("correct");
       setStage("done");
-      setTimeout(() => endWith(ms, `${ms}ms`, participant), 500);
+      doneTimer.current = setTimeout(() => endWith(ms, `${ms}ms`, participant), 500);
     }
   };
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+      if (falseStartTimer.current) clearTimeout(falseStartTimer.current);
+      if (doneTimer.current) clearTimeout(doneTimer.current);
+    },
+    [],
+  );
 
   return (
     <GameShell
@@ -94,8 +108,17 @@ export function ReactionTest() {
         return (
           <button
             type="button"
-            onClick={onTap}
-            className={`flex min-h-[60vh] w-full flex-1 flex-col items-center justify-center transition-colors duration-200 ${
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onTap(e);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onTap(e);
+              }
+            }}
+            className={`flex min-h-[min(60vh,520px)] w-full flex-1 flex-col items-center justify-center touch-manipulation transition-colors duration-200 ${
               stage === "go"
                 ? "bg-emerald-500"
                 : stage === "too-soon"

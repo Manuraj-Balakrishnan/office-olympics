@@ -202,10 +202,22 @@ function scatterLoose(): LoosePiece[] {
     return {
       id,
       x: 18 + col * 32 + (Math.random() * 10 - 5),
-      y: 74 + row * 9 + (Math.random() * 4 - 2),
+      y: 72 + row * 8 + (Math.random() * 3 - 1.5),
       rot: Math.random() * 56 - 28,
     };
   });
+}
+
+function clampLoosePct(x: number, y: number, pieceSizePct: number, trayOnly = false) {
+  const half = Math.max(pieceSizePct / 2, 8);
+  const minX = half;
+  const maxX = 100 - half;
+  const minY = trayOnly ? 58 : half;
+  const maxY = 100 - half * 0.55;
+  return {
+    x: Math.min(maxX, Math.max(minX, x)),
+    y: Math.min(maxY, Math.max(minY, y)),
+  };
 }
 
 function formatTime(ms: number) {
@@ -437,8 +449,9 @@ export function SpeedPuzzle() {
   const onPointerMove = (e: React.PointerEvent) => {
     if (draggingId === null) return;
     const pt = clientToPct(e.clientX, e.clientY);
-    const x = pt.x - dragOffset.current.x;
-    const y = pt.y - dragOffset.current.y;
+    const rawX = pt.x - dragOffset.current.x;
+    const rawY = pt.y - dragOffset.current.y;
+    const { x, y } = clampLoosePct(rawX, rawY, pieceSizePct);
     setLoose((prev) =>
       prev.map((p) => (p.id === draggingId ? { ...p, x, y, rot: 0 } : p)),
     );
@@ -472,6 +485,10 @@ export function SpeedPuzzle() {
       }
     } else {
       play("click");
+      const { x, y } = clampLoosePct(piece.x, piece.y, pieceSizePct, true);
+      setLoose((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, x, y } : p)),
+      );
     }
   };
 
@@ -525,17 +542,17 @@ export function SpeedPuzzle() {
                   linear-gradient(165deg, #323c4a 0%, #1c232e 50%, #12171f 100%)
                 `,
                 boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
-                touchAction: "none",
-                minHeight: 620,
+                touchAction: draggingId !== null ? "none" : "pan-y",
+                minHeight: "min(620px, calc(100dvh - 11rem))",
               }}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
             >
               {/* Wooden board */}
-              <div className="px-5 pt-5 sm:px-8 sm:pt-6">
+              <div className="px-4 pt-4 sm:px-8 sm:pt-6">
                 <div
-                  className="relative mx-auto aspect-square w-full max-w-[340px] rounded-2xl"
+                  className="relative mx-auto aspect-square w-full max-w-[min(340px,72vw)] rounded-2xl"
                   style={{
                     background:
                       "linear-gradient(145deg, #d2b48c 0%, #b8956c 42%, #8b6914 100%)",
@@ -601,13 +618,13 @@ export function SpeedPuzzle() {
                 </div>
               </div>
 
-              <p className="mt-4 px-5 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+              <p className="mt-3 px-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40 sm:mt-4 sm:px-5">
                 Drag pieces — they click into place
               </p>
 
               {/* Felt tray strip */}
               <div
-                className="pointer-events-none absolute inset-x-3 bottom-3 top-[66%] rounded-2xl sm:inset-x-5"
+                className="pointer-events-none absolute inset-x-3 bottom-3 top-[62%] rounded-2xl sm:inset-x-5 sm:top-[66%]"
                 style={{
                   background:
                     "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.28))",

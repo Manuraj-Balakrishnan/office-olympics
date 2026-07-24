@@ -30,6 +30,7 @@ export function SimonPattern() {
   const finishRef = useRef<(() => void) | null>(null);
   const sequenceRef = useRef<number[]>([]);
   const finalized = useRef(false);
+  const startedRef = useRef(false);
 
   const flashPad = useCallback(
     async (id: number) => {
@@ -120,23 +121,18 @@ export function SimonPattern() {
         finishRef.current = finish;
         if (results || phase !== "playing") return null;
 
+        if (!startedRef.current) {
+          startedRef.current = true;
+          queueMicrotask(() => {
+            const first = [Math.floor(Math.random() * 4)];
+            void playSequence(first);
+          });
+        }
+
         return (
           <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-6 px-4 py-6 sm:gap-8">
             <p className="text-center text-base text-[var(--fg-muted)] sm:text-lg">{status}</p>
             <p className="font-display text-2xl font-bold sm:text-3xl">Score: {score}</p>
-
-            {sequence.length === 0 && (
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => {
-                  const first = [Math.floor(Math.random() * 4)];
-                  void playSequence(first);
-                }}
-              >
-                Start Pattern
-              </button>
-            )}
 
             <div className="mx-auto grid w-full max-w-[min(100%,20rem)] grid-cols-2 gap-3 sm:max-w-none sm:w-auto sm:gap-4">
               {COLORS.map((c) => (

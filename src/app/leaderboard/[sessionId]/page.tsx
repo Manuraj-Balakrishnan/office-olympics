@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Podium } from "@/components/leaderboard/Podium";
 import { useSessionPoll } from "@/hooks/useSession";
-import { GAME_MAP } from "@/data/games";
+import { resolveGame } from "@/data/games";
 import {
   GameProgressBar,
   OverallLeaderboard,
@@ -62,7 +62,7 @@ export default function LiveLeaderboardPage({
     })
     .sort((a, b) => b.total - a.total);
 
-  const currentGame = session.currentGameId ? GAME_MAP[session.currentGameId] : null;
+  const currentGame = resolveGame(session.currentGameId);
   const doneThisGame = gameBoard.filter((r) => r.done).length;
 
   return (

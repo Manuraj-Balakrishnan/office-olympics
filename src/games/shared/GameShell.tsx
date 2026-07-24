@@ -75,6 +75,10 @@ export function GameShell({
     setPhase(huddle ? "huddle" : "countdown");
   }, [huddle]);
 
+  const startPlaying = useCallback(() => {
+    setPhase("playing");
+  }, []);
+
   // Whenever a game sets results, flip into results phase so the screen isn't blank
   useEffect(() => {
     if (results) setPhase("results");
@@ -200,7 +204,7 @@ export function GameShell({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.08 }}
           >
-            <CountdownIntro onComplete={() => setPhase("playing")} />
+            <CountdownIntro onComplete={startPlaying} />
           </motion.div>
         )}
 

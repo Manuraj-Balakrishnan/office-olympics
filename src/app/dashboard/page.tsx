@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { CATEGORY_COLORS, GAME_MAP, GAMES } from "@/data/games";
+import { CATEGORY_COLORS, GAMES, resolveGame } from "@/data/games";
 import { MiniLeaderboard } from "@/components/leaderboard/MiniLeaderboard";
 import { useTournamentStore } from "@/store/useTournamentStore";
 import { useSound } from "@/hooks/useSound";
@@ -51,7 +51,9 @@ export default function DashboardPage() {
     if (!tournamentStarted) router.replace("/setup");
   }, [tournamentStarted, router]);
 
-  const ordered = gameOrder.map((id) => GAME_MAP[id]);
+  const ordered = gameOrder
+    .map((id) => resolveGame(id))
+    .filter((g): g is NonNullable<typeof g> => g != null);
 
   return (
     <PageEnter className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 lg:flex-row">

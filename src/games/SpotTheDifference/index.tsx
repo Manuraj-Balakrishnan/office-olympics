@@ -66,7 +66,7 @@ export function SpotTheDifference() {
       if (foundRef.current.includes(d.id)) continue;
       for (const z of hotspotZones(d)) {
         const dist = Math.hypot(z.x - x, z.y - y);
-        const reach = z.radius * 1.25;
+        const reach = z.radius * (typeof window !== "undefined" && window.innerWidth < 640 ? 1.55 : 1.25);
         if (dist <= reach && dist < bestDist) {
           bestDist = dist;
           hit = d;
@@ -125,22 +125,22 @@ export function SpotTheDifference() {
                 {found.length}/{total} found
               </p>
             </div>
-            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-              <div className="overflow-hidden rounded-2xl border border-white/10">
-                <p className="bg-white/5 px-3 py-1 text-center text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)]">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <div className="overflow-visible rounded-2xl border border-white/10">
+                <p className="bg-white/5 px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--fg-muted)] sm:px-3 sm:text-xs">
                   Original
                 </p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={pair.leftUrl}
                   alt="Original scene"
-                  className="h-auto w-full bg-white"
+                  className="mx-auto h-auto max-h-[min(42vh,52vw)] w-full bg-white object-contain sm:max-h-[min(48vh,420px)]"
                   draggable={false}
                 />
               </div>
-              <div className="overflow-hidden rounded-2xl border border-white/10">
-                <p className="bg-white/5 px-3 py-1 text-center text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)]">
-                  Find differences — tap here
+              <div className="overflow-visible rounded-2xl border border-white/10">
+                <p className="bg-white/5 px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--fg-muted)] sm:px-3 sm:text-xs">
+                  Find — tap here
                 </p>
                 <div className="relative cursor-crosshair touch-manipulation" onClick={onClickRight}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -148,7 +148,7 @@ export function SpotTheDifference() {
                     ref={imgRef}
                     src={pair.rightUrl}
                     alt="Modified scene"
-                    className="h-auto w-full bg-white"
+                    className="mx-auto h-auto max-h-[min(42vh,52vw)] w-full bg-white object-contain sm:max-h-[min(48vh,420px)]"
                     draggable={false}
                   />
                   {pair.differences.map((d) =>
@@ -157,10 +157,13 @@ export function SpotTheDifference() {
                         key={d.id}
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="pointer-events-none absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg sm:h-8 sm:w-8"
-                        style={{ left: `${d.x * 100}%`, top: `${d.y * 100}%` }}
+                        className="pointer-events-none absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg sm:h-8 sm:w-8"
+                        style={{
+                          left: `${Math.min(0.96, Math.max(0.04, d.x)) * 100}%`,
+                          top: `${Math.min(0.96, Math.max(0.04, d.y)) * 100}%`,
+                        }}
                       >
-                        <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <Check className="h-3 w-3 sm:h-4 sm:w-4" />
                       </motion.span>
                     ) : null,
                   )}

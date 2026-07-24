@@ -4,9 +4,8 @@ import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { GAME_MAP } from "@/data/games";
+import { resolveGame } from "@/data/games";
 import { loadIdentity, useSessionPoll } from "@/hooks/useSession";
-import type { GameId } from "@/types/tournament";
 import {
   CurrentGameScores,
   GameProgressBar,
@@ -44,7 +43,7 @@ export default function PlaySessionPage({
   const mvps = data?.mvps ?? [];
   const roundComplete = Boolean(data?.roundComplete);
 
-  const currentGame = session?.currentGameId ? GAME_MAP[session.currentGameId] : null;
+  const currentGame = resolveGame(session?.currentGameId);
   const myGameRow = gameBoard.find((r) => r.playerId === playerId);
   const canPlay = Boolean(
     session &&
@@ -233,7 +232,8 @@ export default function PlaySessionPage({
             {session.gameOrder
               .slice(gameIndex)
               .slice(0, 3)
-              .map((g) => GAME_MAP[g as GameId].title)
+              .map((g) => resolveGame(g)?.title)
+              .filter(Boolean)
               .join(" → ") || "Final results"}
           </p>
         </PageItem>
