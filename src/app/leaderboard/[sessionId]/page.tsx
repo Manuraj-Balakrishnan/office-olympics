@@ -8,6 +8,7 @@ import { useSessionPoll } from "@/hooks/useSession";
 import { resolveGame } from "@/data/games";
 import {
   GameProgressBar,
+  LobbyGamesList,
   OverallLeaderboard,
   PerGameTops,
 } from "@/components/session/ScoreBoards";
@@ -201,7 +202,17 @@ export default function LiveLeaderboardPage({
             )}
           </section>
         </PageItem>
-      ) : (
+      ) : null}
+
+      {session.status === "lobby" && (
+        <PageItem>
+          <div className="mx-auto w-full max-w-2xl">
+            <LobbyGamesList order={session.gameOrder} />
+          </div>
+        </PageItem>
+      )}
+
+      {session.status !== "lobby" ? (
         <>
           <PageItem>
             <Podium top={board.slice(0, 3)} />
@@ -293,7 +304,7 @@ export default function LiveLeaderboardPage({
             </PageItem>
           )}
         </>
-      )}
+      ) : null}
 
       <PageItem className="flex flex-wrap items-center justify-center gap-3 pb-8">
         <Link href="/" className="btn-secondary">

@@ -9,6 +9,7 @@ import { loadIdentity, useSessionPoll } from "@/hooks/useSession";
 import {
   CurrentGameScores,
   GameProgressBar,
+  LobbyGamesList,
   OverallLeaderboard,
   PerGameTops,
 } from "@/components/session/ScoreBoards";
@@ -158,6 +159,12 @@ export default function PlaySessionPage({
               Keep this screen open — games launch automatically when the host starts each round.
             </p>
           </motion.div>
+        </PageItem>
+      )}
+
+      {session.status === "lobby" && (
+        <PageItem>
+          <LobbyGamesList order={session.gameOrder} />
         </PageItem>
       )}
 

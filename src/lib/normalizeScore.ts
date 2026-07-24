@@ -38,7 +38,7 @@ export function clampRawScore(gameId: GameId, rawScore: number): number {
  * Map each game's raw performance to a fair 0–1000 contribution.
  *
  * Raw units:
- * - reaction: milliseconds (lower better)
+ * - reaction: average ms over 3 rounds (lower better)
  * - simon: longest completed sequence length
  * - memory: matches*100 + move efficiency + combo + clear/speed bonus
  * - spot-difference: round((found/15)*1000) + speed clear bonus 0–100 (1100 max)
@@ -59,7 +59,7 @@ export function normalizeToThousand(
 
   switch (gameId) {
     case "reaction": {
-      // Elite human ~150–180ms → near 1000; 400ms → ~650; 800ms → ~90; false start 1500 → 0
+      // Avg of 3 rounds: elite ~160–200ms → near 1000; 300ms → ~790; 450ms → ~580; 800ms → ~90
       const ms = Math.max(120, raw); // floor absurd sub-human times
       return clamp(1000 - (ms - 150) * 1.4);
     }

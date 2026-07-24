@@ -1,10 +1,38 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Eye,
+  HelpCircle,
+  Keyboard,
+  LayoutGrid,
+  Medal,
+  Music,
+  Palette,
+  Puzzle,
+  Search,
+  Shuffle,
+  Trophy,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import type { GameResultSummary, GameScoreRow, LeaderboardRow } from "@/hooks/useSession";
-import { Medal, Trophy } from "lucide-react";
+import { resolveGame } from "@/data/games";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
+
+const GAME_ICONS: Record<string, LucideIcon> = {
+  Zap,
+  Music,
+  LayoutGrid,
+  Search,
+  Eye,
+  Palette,
+  Keyboard,
+  Puzzle,
+  Shuffle,
+  HelpCircle,
+};
 
 export function OverallLeaderboard({
   rows,
@@ -268,5 +296,60 @@ export function GameProgressBar({
         {Math.min(idx + 1, order.length)}/{order.length}
       </span>
     </div>
+  );
+}
+
+/** Ordered lineup shown in waiting rooms before the tournament starts */
+export function LobbyGamesList({
+  order,
+  title = "Games lineup",
+}: {
+  order: string[];
+  title?: string;
+}) {
+  const games = order
+    .map((id, i) => {
+      const game = resolveGame(id);
+      return game ? { index: i + 1, game } : null;
+    })
+    .filter((g): g is NonNullable<typeof g> => g != null);
+
+  return (
+    <section className="card-surface">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <h3 className="font-display text-lg font-bold">{title}</h3>
+        <p className="text-xs font-semibold tabular-nums text-[var(--fg-muted)]">
+          {games.length} round{games.length === 1 ? "" : "s"}
+        </p>
+      </div>
+      <ol className="space-y-1.5">
+        {games.map(({ index, game }) => {
+          const Icon = GAME_ICONS[game.icon] ?? Zap;
+          return (
+            <li
+              key={game.id}
+              className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5 sm:gap-3.5"
+            >
+              <span className="w-5 shrink-0 text-center text-sm font-semibold tabular-nums text-[var(--fg-muted)]">
+                {index}
+              </span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--primary-from)_18%,transparent)] text-[var(--primary-from)]">
+                <Icon className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{game.title}</p>
+                <p className="truncate text-xs text-[var(--fg-muted)]">{game.description}</p>
+              </div>
+              <span className="hidden shrink-0 rounded-lg bg-white/5 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--fg-muted)] sm:inline">
+                {game.difficulty}
+              </span>
+            </li>
+          );
+        })}
+        {games.length === 0 && (
+          <li className="px-1 py-3 text-sm text-[var(--fg-muted)]">No games scheduled.</li>
+        )}
+      </ol>
+    </section>
   );
 }

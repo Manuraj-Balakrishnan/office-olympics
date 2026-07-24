@@ -24,6 +24,7 @@ import {
 } from "@/hooks/useSession";
 import {
   GameProgressBar,
+  LobbyGamesList,
   OverallLeaderboard,
   PerGameTops,
 } from "@/components/session/ScoreBoards";
@@ -373,6 +374,12 @@ export default function HostSessionPage({
               <p className="mt-2 text-xs font-semibold text-black/60">Scan to join</p>
             </div>
           </section>
+          </PageItem>
+        )}
+
+        {session.status === "lobby" && (
+          <PageItem>
+            <LobbyGamesList order={session.gameOrder} />
           </PageItem>
         )}
 
