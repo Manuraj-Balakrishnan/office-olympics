@@ -21,13 +21,15 @@ Polished multiplayer mini-game tournament platform for office team-building.
 
 ```bash
 npm install
-npm run cf:migrate:local   # apply D1 schema to local SQLite
+npm run cf:migrate:local   # apply D1 schema to local SQLite (database: office)
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
 `initOpenNextCloudflareForDev` in `next.config.ts` exposes local D1 bindings during `next dev`. Classic single-device mode remains at `/setup`.
+
+If you see **Session not found**, create a **new** host session (old in-memory lobby URLs will not exist in D1). Also make sure local migrations have been applied.
 
 Preview the Workers runtime locally:
 

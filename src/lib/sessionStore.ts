@@ -21,7 +21,11 @@ type Store = {
 
 const g = globalThis as unknown as { __ooSessions?: Store };
 
-/** In-process fallback when D1 bindings are unavailable (plain Node scripts / build). */
+/**
+ * In-process fallback for Node scripts only.
+ * When Cloudflare context is available, D1 is required — memory sessions
+ * disappear across Worker isolates and cause "Session not found".
+ */
 function memoryStore(): Store {
   if (!g.__ooSessions) {
     g.__ooSessions = { byId: new Map(), byCode: new Map() };
@@ -35,6 +39,19 @@ function parseSession(payload: string): TournamentSession | null {
   } catch {
     return null;
   }
+}
+
+async function loadFromD1(
+  query: string,
+  ...binds: unknown[]
+): Promise<TournamentSession | null> {
+  const db = await getDB();
+  if (!db) return null;
+  const row = await db
+    .prepare(query)
+    .bind(...binds)
+    .first<{ payload: string }>();
+  return row ? parseSession(row.payload) : null;
 }
 
 function makeJoinCode(): string {
@@ -80,27 +97,21 @@ export async function createSession(input: CreateSessionInput): Promise<Tourname
 }
 
 export async function getSession(id: string): Promise<TournamentSession | null> {
-  const db = await getDB();
-  if (db) {
-    const row = await db
-      .prepare(`SELECT payload FROM sessions WHERE id = ?`)
-      .bind(id)
-      .first<{ payload: string }>();
-    return row ? parseSession(row.payload) : null;
-  }
+  const fromD1 = await loadFromD1(`SELECT payload FROM sessions WHERE id = ?`, id);
+  if (fromD1) return fromD1;
+  // Only hit memory when D1 context is absent (Node scripts)
+  if (await getDB()) return null;
   return memoryStore().byId.get(id) ?? null;
 }
 
 export async function getSessionByCode(code: string): Promise<TournamentSession | null> {
   const normalized = code.trim().toUpperCase().replace(/\s+/g, "");
-  const db = await getDB();
-  if (db) {
-    const row = await db
-      .prepare(`SELECT payload FROM sessions WHERE join_code = ?`)
-      .bind(normalized)
-      .first<{ payload: string }>();
-    return row ? parseSession(row.payload) : null;
-  }
+  const fromD1 = await loadFromD1(
+    `SELECT payload FROM sessions WHERE join_code = ?`,
+    normalized,
+  );
+  if (fromD1) return fromD1;
+  if (await getDB()) return null;
   const id = memoryStore().byCode.get(normalized);
   if (!id) return null;
   return memoryStore().byId.get(id) ?? null;
@@ -570,7 +581,12 @@ async function persist(session: TournamentSession) {
   mem.byCode.set(session.joinCode, session.id);
 
   const db = await getDB();
-  if (db) {
+  if (!db) {
+    // Plain Node scripts without Workers bindings — memory only
+    return;
+  }
+
+  try {
     await db
       .prepare(
         `INSERT INTO sessions (id, join_code, host_token, payload, updated_at)
@@ -583,6 +599,11 @@ async function persist(session: TournamentSession) {
       )
       .bind(session.id, session.joinCode, session.hostToken, JSON.stringify(session))
       .run();
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "unknown";
+    throw new Error(
+      `Failed to save session to D1 (${detail}). Run \`npm run cf:migrate:local\` (dev) or \`npm run cf:migrate\` (remote).`,
+    );
   }
 }
 
