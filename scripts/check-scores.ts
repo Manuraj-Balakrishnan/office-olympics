@@ -14,9 +14,12 @@ assert(normalizeToThousand("simon", 15) === 1000, "simon 15");
 assert(normalizeToThousand("simon", 10) < 1000, "simon 10 not max");
 assert(normalizeToThousand("simon", 5) === 333, "simon 5");
 
-// Memory: perfect clear shouldn't free-1000 on partial
+// Memory: perfect clear ~1100 raw → 1000; partial stays modest
 assert(normalizeToThousand("memory", 100) < 200, "1 match modest");
+assert(normalizeToThousand("memory", 400) < 400, "half board modest");
+assert(normalizeToThousand("memory", 900) < 900, "messy clear not max");
 assert(normalizeToThousand("memory", 1100) === 1000, "perfect clear");
+assert(normalizeToThousand("memory", 1200) === 1000, "clamped elite");
 
 // Spot
 assert(normalizeToThousand("spot-difference", 1100) === 1000, "spot clear");
@@ -26,22 +29,23 @@ assert(normalizeToThousand("spot-difference", 400) < 400, "spot partial");
 assert(normalizeToThousand("one-second", 600) === 1000, "one-sec max");
 assert(normalizeToThousand("one-second", 300) === 500, "one-sec half");
 
-// Stroop
-assert(normalizeToThousand("stroop", 15) === 1000, "stroop perfect");
+// Stroop: ~45 correct in 90s = 1000
+assert(normalizeToThousand("stroop", 45) === 1000, "stroop elite");
 assert(normalizeToThousand("stroop", 0) === 0, "stroop zero");
+assert(normalizeToThousand("stroop", 22) === 489, "stroop mid");
+assert(clampRawScore("stroop", 999) === 80, "stroop raw cap");
 
 // Typing capped raw
 assert(clampRawScore("typing", 99999) === 1500, "typing raw cap");
 assert(normalizeToThousand("typing", 1000) === 1000, "typing elite");
 
-// Speed puzzle: faster complete time = higher points
-assert(normalizeToThousand("speed-puzzle", 20_000) === 1000, "puzzle elite");
+// Speed puzzle: points 0–1000, faster solve earns more
+assert(normalizeToThousand("speed-puzzle", 1000) === 1000, "puzzle elite pts");
 assert(
-  normalizeToThousand("speed-puzzle", 30_000) >
-    normalizeToThousand("speed-puzzle", 60_000),
-  "puzzle faster better",
+  normalizeToThousand("speed-puzzle", 800) > normalizeToThousand("speed-puzzle", 400),
+  "puzzle higher pts better",
 );
-assert(normalizeToThousand("speed-puzzle", 90_000) === 0, "puzzle slow floor");
+assert(normalizeToThousand("speed-puzzle", 0) === 0, "puzzle zero");
 
 // Trivia
 assert(normalizeToThousand("trivia", 3000) === 1000, "trivia max");

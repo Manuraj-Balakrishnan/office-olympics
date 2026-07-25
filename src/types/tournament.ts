@@ -125,6 +125,8 @@ export interface JoinSessionInput {
   code: string;
   name: string;
   teamId?: string;
+  /** Player avatar id (individuals) or legacy emoji */
+  emoji?: string;
   createTeam?: { name: string; emoji: string };
   asIndividual?: boolean;
 }

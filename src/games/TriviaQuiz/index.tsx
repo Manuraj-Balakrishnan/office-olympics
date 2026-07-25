@@ -7,7 +7,8 @@ import { ResultsScreen, type ResultRow } from "../shared/ResultsScreen";
 import { pickTrivia } from "@/data/triviaQuestions";
 import { useSound } from "@/hooks/useSound";
 
-const PER_QUESTION_MS = 8000;
+const PER_QUESTION_MS = 10000;
+const FEEDBACK_MS = 900;
 
 export function TriviaQuiz() {
   const { play } = useSound();
@@ -17,9 +18,11 @@ export function TriviaQuiz() {
   const [leftMs, setLeftMs] = useState(PER_QUESTION_MS);
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [locked, setLocked] = useState(false);
+  /** Selected option index, or -1 when time ran out with no pick. */
+  const [picked, setPicked] = useState<number | null>(null);
   // Don't run the per-question clock during how-to / countdown — only once playing.
   const [started, setStarted] = useState(false);
-  /** Option indices removed by the 50/50 hint (reset each question). */
+  /** Option index removed by the hint (reset each question). */
   const [hiddenOpts, setHiddenOpts] = useState<number[]>([]);
   const scoreRef = useRef(0);
   const correctRef = useRef(0);
@@ -59,6 +62,7 @@ export function TriviaQuiz() {
       setIndex(nextIndex);
       lockedRef.current = false;
       setLocked(false);
+      setPicked(null);
       setHiddenOpts([]);
     }
   };
@@ -67,6 +71,7 @@ export function TriviaQuiz() {
     if (!started || results || finalized.current || !q) return;
     lockedRef.current = false;
     setLocked(false);
+    setPicked(null);
     setHiddenOpts([]);
     setLeftMs(PER_QUESTION_MS);
     const start = Date.now();
@@ -78,8 +83,9 @@ export function TriviaQuiz() {
         if (!lockedRef.current && !finalized.current) {
           lockedRef.current = true;
           setLocked(true);
+          setPicked(-1);
           play("timesup");
-          setTimeout(() => advance(0), 250);
+          setTimeout(() => advance(0), FEEDBACK_MS);
         }
       }
     }, 50);
@@ -93,7 +99,7 @@ export function TriviaQuiz() {
       .map((_, i) => i)
       .filter((i) => i !== q.correctIndex)
       .sort(() => Math.random() - 0.5)
-      .slice(0, 2);
+      .slice(0, 1);
     play("click");
     setHiddenOpts(wrong);
   };
@@ -103,16 +109,17 @@ export function TriviaQuiz() {
     if (hiddenOpts.includes(optIndex)) return;
     lockedRef.current = true;
     setLocked(true);
+    setPicked(optIndex);
     const speedRatio = leftMs / PER_QUESTION_MS;
     if (optIndex === q.correctIndex) {
       play("correct");
       // Hint trims the max speed bonus a bit so using it isn't free points.
       const bonusScale = hintUsed ? 0.7 : 1;
       const points = Math.round(100 + speedRatio * 100 * bonusScale);
-      setTimeout(() => advance(points), 300);
+      setTimeout(() => advance(points), FEEDBACK_MS);
     } else {
       play("wrong");
-      setTimeout(() => advance(0), 300);
+      setTimeout(() => advance(0), FEEDBACK_MS);
     }
   };
 
@@ -150,7 +157,7 @@ export function TriviaQuiz() {
                   r="42"
                   fill="none"
                   stroke="currentColor"
-                  className="text-white/10"
+                  className="text-tone-10"
                   strokeWidth="8"
                 />
                 <motion.circle
@@ -189,11 +196,21 @@ export function TriviaQuiz() {
               onClick={useHint}
               className="btn-secondary !py-2 text-sm disabled:opacity-50"
             >
-              {hintUsed ? "Hint used" : "Hint · remove 2"}
+              {hintUsed ? "Hint used" : "Hint · remove 1"}
             </button>
             <div className="grid w-full gap-3 sm:grid-cols-2">
               {q.options.map((opt, i) => {
                 const removed = hiddenOpts.includes(i);
+                const showFeedback = picked !== null;
+                const isCorrect = i === q.correctIndex;
+                const isWrongPick = picked === i && !isCorrect;
+                const feedbackClass = showFeedback
+                  ? isCorrect
+                    ? "!border-emerald-400 !bg-emerald-500/25 !text-emerald-100 ring-2 ring-emerald-400/60"
+                    : isWrongPick
+                      ? "!border-red-400 !bg-red-500/25 !text-red-100 ring-2 ring-red-400/60"
+                      : "opacity-50"
+                  : "";
                 return (
                   <button
                     key={opt}
@@ -203,7 +220,7 @@ export function TriviaQuiz() {
                     aria-hidden={removed}
                     className={`btn-secondary !justify-start !rounded-2xl !px-4 !py-3.5 text-left text-base disabled:opacity-60 sm:!px-5 sm:!py-4 sm:text-lg ${
                       removed ? "pointer-events-none line-through opacity-30" : ""
-                    }`}
+                    } ${feedbackClass}`}
                   >
                     <span className="mr-3 shrink-0 font-display text-[var(--fg-muted)]">
                       {String.fromCharCode(65 + i)}

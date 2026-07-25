@@ -11,6 +11,7 @@ import { useSound } from "@/hooks/useSound";
 import { staggerContainer, staggerItem } from "@/lib/motion";
 import { PageItem } from "@/components/layout/PageEnter";
 import { Podium } from "@/components/leaderboard/Podium";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 const MEDAL = ["🥇", "🥈", "🥉"] as const;
 
@@ -124,7 +125,7 @@ export function FinishedResults({
                     key={row.participant.id}
                     variants={staggerItem}
                     className={`flex items-center gap-3 px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 ${
-                      i > 0 ? "border-t border-white/5" : ""
+                      i > 0 ? "border-t border-[var(--border)]" : ""
                     } ${
                       isMe
                         ? "bg-[color-mix(in_srgb,var(--primary-from)_14%,transparent)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--primary-from)_35%,transparent)]"
@@ -140,9 +141,13 @@ export function FinishedResults({
                         <span className="text-[var(--fg-muted)]">#{i + 1}</span>
                       )}
                     </span>
-                    <span className="text-2xl sm:text-3xl">
-                      {row.participant.emoji}
-                    </span>
+                    <PlayerAvatar
+                      avatar={row.participant.emoji}
+                      name={row.participant.name}
+                      size="lg"
+                      rounded="rounded-xl"
+                      color={row.participant.color}
+                    />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-display text-base font-bold sm:text-lg">
                         {row.participant.name}
@@ -192,7 +197,7 @@ export function FinishedResults({
               variants={staggerContainer}
               initial="hidden"
               animate="show"
-              className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-[var(--border)]"
+              className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)]"
             >
               {completedGames.map((g) => {
                 const winner = g.top[0];
@@ -207,8 +212,14 @@ export function FinishedResults({
                         {g.title}
                       </p>
                       {winner && (
-                        <p className="mt-0.5 truncate text-xs text-[var(--fg-muted)] sm:text-sm">
-                          {winner.emoji} {winner.name}
+                        <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-[var(--fg-muted)] sm:text-sm">
+                          <PlayerAvatar
+                            avatar={winner.emoji}
+                            name={winner.name}
+                            size="xs"
+                            rounded="rounded-md"
+                          />
+                          <span className="truncate">{winner.name}</span>
                         </p>
                       )}
                     </div>
@@ -243,7 +254,13 @@ export function FinishedResults({
                   transition={{ delay: 0.06 * i }}
                   className="rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--bg-card)_85%,transparent)] px-4 py-5 text-center"
                 >
-                  <p className="text-4xl">{m.emoji}</p>
+                  <PlayerAvatar
+                    avatar={m.emoji}
+                    name={m.playerName}
+                    size="xl"
+                    rounded="rounded-2xl"
+                    className="mx-auto"
+                  />
                   <p className="mt-2 font-display text-lg font-bold text-gradient">
                     {m.title}
                   </p>

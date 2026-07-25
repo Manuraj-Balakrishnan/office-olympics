@@ -20,7 +20,7 @@ export function MuteToggle() {
         if (!next) play("click");
       }}
     >
-      {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+      {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
     </button>
   );
 }

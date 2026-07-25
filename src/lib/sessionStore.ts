@@ -2,10 +2,12 @@ import {
   GAMES,
   GAME_MAP,
   TEAM_COLORS,
-  TEAM_EMOJIS,
   migrateGameId,
   sanitizeGameIds,
+  sanitizeGameOrder,
 } from "@/data/games";
+import { nextPlayerAvatar, isPlayerAvatarId } from "@/data/playerAvatars";
+import { nextTeamEmblem, isTeamEmblemId, getTeamEmblem } from "@/data/teamEmblems";
 import type {
   CreateSessionInput,
   GameId,
@@ -16,6 +18,7 @@ import type {
   PlayerOrTeam,
   Team,
   TournamentSession,
+  TournamentSettings,
 } from "@/types/tournament";
 import { normalizeToThousand, clampRawScore } from "@/lib/normalizeScore";
 import { getDB } from "@/lib/d1";
@@ -41,8 +44,8 @@ function memoryStore(): Store {
 }
 
 function normalizeSession(session: TournamentSession): TournamentSession {
-  session.gameOrder = sanitizeGameIds(session.gameOrder as string[]);
-  session.playedGames = sanitizeGameIds(session.playedGames as string[]);
+  session.settings = { ...defaultSettings(), ...session.settings };
+  session.gameOrder = sanitizeGameOrder(session.gameOrder as string[]);
   if (session.currentGameId) {
     session.currentGameId = migrateGameId(session.currentGameId);
   }
@@ -52,9 +55,24 @@ function normalizeSession(session: TournamentSession): TournamentSession {
       return gameId ? { ...s, gameId } : null;
     })
     .filter((s): s is NonNullable<typeof s> => s != null);
+
+  // played/completed must stay empty when nothing has been finished.
+  // Also repair sessions corrupted when sanitizeGameIds([]) used to expand to
+  // the full roster — only keep games that actually have scores.
+  const scoredGames = new Set(session.scores.map((s) => s.gameId));
+  session.playedGames = sanitizeGameIds(session.playedGames as string[]).filter(
+    (id) => scoredGames.has(id),
+  );
   for (const player of session.players) {
     if (player.completedGames) {
-      player.completedGames = sanitizeGameIds(player.completedGames as string[]);
+      const playerScored = new Set(
+        session.scores
+          .filter((s) => s.playerId === player.id)
+          .map((s) => s.gameId),
+      );
+      player.completedGames = sanitizeGameIds(
+        player.completedGames as string[],
+      ).filter((id) => playerScored.has(id));
     }
   }
   return session;
@@ -180,11 +198,17 @@ export async function joinSession(input: JoinSessionInput): Promise<{
   let teamId = input.teamId;
 
   if (input.createTeam && session.mode === "teams") {
+    const emblem =
+      input.createTeam.emoji && isTeamEmblemId(input.createTeam.emoji)
+        ? input.createTeam.emoji
+        : nextTeamEmblem(session.teams.map((t) => t.emoji));
     const team: Team = {
       id: randomUUID(),
       name: input.createTeam.name.trim() || `${name}'s Team`,
-      emoji: input.createTeam.emoji || TEAM_EMOJIS[session.teams.length % TEAM_EMOJIS.length]!,
-      color: TEAM_COLORS[session.teams.length % TEAM_COLORS.length]!,
+      emoji: emblem,
+      color:
+        (getTeamEmblem(emblem)?.color ?? null) ??
+        TEAM_COLORS[session.teams.length % TEAM_COLORS.length]!,
     };
     session.teams.push(team);
     teamId = team.id;
@@ -199,11 +223,15 @@ export async function joinSession(input: JoinSessionInput): Promise<{
   }
 
   const playerToken = randomUUID();
+  const chosen =
+    input.emoji && isPlayerAvatarId(input.emoji.trim())
+      ? input.emoji.trim()
+      : nextPlayerAvatar(session.players.map((p) => p.emoji));
   const player: Player = {
     id: randomUUID(),
     name,
     teamId: session.mode === "teams" ? teamId : undefined,
-    emoji: "🙋",
+    emoji: chosen,
     joinedAt: Date.now(),
     completedGames: [],
     playerToken,
@@ -538,13 +566,19 @@ export function getGameScoreboard(session: TournamentSession, gameId: GameId | n
       : session.turnOrder;
   const rows = order.map((pid, i) => {
     const player = session.players.find((p) => p.id === pid);
+    const team =
+      session.mode === "teams" && player?.teamId
+        ? session.teams.find((t) => t.id === player.teamId)
+        : undefined;
     const entry = session.scores.find((s) => s.playerId === pid && s.gameId === gameId);
     const done = Boolean(entry);
     return {
       playerId: pid,
       name: player?.name ?? "Unknown",
-      emoji: player?.emoji ?? "🙋",
-      color: TEAM_COLORS[i % TEAM_COLORS.length]!,
+      emoji: player?.emoji ?? team?.emoji,
+      color:
+        (team ? (getTeamEmblem(team.emoji)?.color ?? null) ?? team.color : null) ??
+        TEAM_COLORS[i % TEAM_COLORS.length]!,
       score: entry?.score ?? null,
       rawScore: entry?.rawScore ?? null,
       detail: entry?.detail ?? null,
@@ -606,11 +640,14 @@ export async function addTeam(
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Team name required");
 
+  const emblem = isTeamEmblemId(emoji) ? emoji : nextTeamEmblem(session.teams.map((t) => t.emoji));
   const team: Team = {
     id: randomUUID(),
     name: trimmed,
-    emoji,
-    color: TEAM_COLORS[session.teams.length % TEAM_COLORS.length]!,
+    emoji: emblem,
+    color:
+      (getTeamEmblem(emblem)?.color ?? null) ??
+      TEAM_COLORS[session.teams.length % TEAM_COLORS.length]!,
   };
   session.teams.push(team);
   await persist(session);
@@ -683,7 +720,7 @@ export function getParticipants(session: TournamentSession): PlayerOrTeam[] {
     const teams = session.teams.map((t) => ({
       id: t.id,
       name: t.name,
-      color: t.color,
+      color: (getTeamEmblem(t.emoji)?.color ?? null) ?? t.color,
       emoji: t.emoji,
       kind: "team" as const,
       memberIds: session.players.filter((p) => p.teamId === t.id).map((p) => p.id),
@@ -694,7 +731,7 @@ export function getParticipants(session: TournamentSession): PlayerOrTeam[] {
         id: p.id,
         name: p.name,
         color: TEAM_COLORS[i % TEAM_COLORS.length]!,
-        emoji: p.emoji ?? "🙋",
+        emoji: p.emoji ?? "",
         kind: "player" as const,
       }));
     return [...teams, ...solos];
@@ -703,7 +740,7 @@ export function getParticipants(session: TournamentSession): PlayerOrTeam[] {
     id: p.id,
     name: p.name,
     color: TEAM_COLORS[i % TEAM_COLORS.length]!,
-    emoji: p.emoji ?? "🙋",
+    emoji: p.emoji ?? "",
     kind: "player" as const,
   }));
 }
@@ -736,7 +773,7 @@ export function getLeaderboard(session: TournamentSession) {
             return {
               id: player.id,
               name: player.name,
-              emoji: player.emoji ?? "🙋",
+              emoji: player.emoji ?? "",
               total: memberTotal,
             };
           })
@@ -758,6 +795,10 @@ export function getLeaderboard(session: TournamentSession) {
 export function computeMvps(session: TournamentSession): MvpAward[] {
   const awards: MvpAward[] = [];
   const players = session.players;
+
+  const markFor = (player: Player) => {
+    return player.emoji ?? "";
+  };
 
   const bestFor = (
     gameId: GameId,
@@ -784,7 +825,7 @@ export function computeMvps(session: TournamentSession): MvpAward[] {
       description: "Lowest reaction time",
       playerId: reflex.player.id,
       playerName: reflex.player.name,
-      emoji: reflex.player.emoji ?? "⚡",
+      emoji: markFor(reflex.player),
       valueLabel: `${reflex.entry.rawScore ?? reflex.entry.score}ms`,
     });
   }
@@ -803,7 +844,7 @@ export function computeMvps(session: TournamentSession): MvpAward[] {
       description: "Best memory-game performance",
       playerId: memWinner.player.id,
       playerName: memWinner.player.name,
-      emoji: memWinner.player.emoji ?? "🧠",
+      emoji: markFor(memWinner.player),
       valueLabel: `${memWinner.entry.score} pts`,
     });
   }
@@ -816,7 +857,7 @@ export function computeMvps(session: TournamentSession): MvpAward[] {
       description: "Top rapid-fire quiz score",
       playerId: trivia.player.id,
       playerName: trivia.player.name,
-      emoji: trivia.player.emoji ?? "❓",
+      emoji: markFor(trivia.player),
       valueLabel: `${trivia.entry.score} pts`,
     });
   }
@@ -829,7 +870,7 @@ export function computeMvps(session: TournamentSession): MvpAward[] {
       description: "Fastest accurate typer",
       playerId: typing.player.id,
       playerName: typing.player.name,
-      emoji: typing.player.emoji ?? "⌨️",
+      emoji: markFor(typing.player),
       valueLabel: typing.entry.detail ?? `${typing.entry.score} pts`,
     });
   }
@@ -853,7 +894,7 @@ export function computeMvps(session: TournamentSession): MvpAward[] {
       description: "Highest individual point total",
       playerId: overall.player.id,
       playerName: overall.player.name,
-      emoji: overall.player.emoji ?? "🏆",
+      emoji: markFor(overall.player),
       valueLabel: `${overall.total} pts`,
     });
   }
@@ -877,6 +918,32 @@ export async function shuffleGames(
     [order[i], order[j]] = [order[j]!, order[i]!];
   }
   session.gameOrder = order;
+  await persist(session);
+  return session;
+}
+
+export async function updateSessionSettings(
+  sessionId: string,
+  hostToken: string,
+  partial: Partial<TournamentSettings>,
+): Promise<TournamentSession> {
+  const session = await getSession(sessionId);
+  if (!session) throw new Error("Session not found");
+  assertHost(session, hostToken);
+  if (session.status === "finished") {
+    throw new Error("Tournament already finished");
+  }
+  const next: TournamentSettings = { ...session.settings };
+  if (typeof partial.assistMode === "boolean") {
+    next.assistMode = partial.assistMode;
+  }
+  if (partial.teamPlayMode === "everyone" || partial.teamPlayMode === "one-rep") {
+    next.teamPlayMode = partial.teamPlayMode;
+  }
+  if (typeof partial.huddleEnabled === "boolean") {
+    next.huddleEnabled = partial.huddleEnabled;
+  }
+  session.settings = next;
   await persist(session);
   return session;
 }

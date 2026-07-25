@@ -3,7 +3,6 @@
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { resolveGame } from "@/data/games";
 import { loadIdentity, useSessionPoll } from "@/hooks/useSession";
 import {
@@ -13,7 +12,10 @@ import {
   OverallLeaderboard,
   PerGameTops,
 } from "@/components/session/ScoreBoards";
+import { LobbyReadyBanner, LobbyRoster } from "@/components/session/WaitingRoom";
+import { ScoreSubmittedCard } from "@/components/session/ScoreSubmittedCard";
 import { FinishedResults } from "@/components/session/FinishedResults";
+import { getTeamEmblem } from "@/data/teamEmblems";
 import { useSound } from "@/hooks/useSound";
 import { PageEnter, PageItem } from "@/components/layout/PageEnter";
 import { LoadingPulse } from "@/components/layout/LoadingPulse";
@@ -46,6 +48,13 @@ export default function PlaySessionPage({
 
   const currentGame = resolveGame(session?.currentGameId);
   const myGameRow = gameBoard.find((r) => r.playerId === playerId);
+  const myTeam =
+    session?.mode === "teams" && me?.teamId
+      ? session.teams.find((t) => t.id === me.teamId)
+      : undefined;
+  const teamColor = myTeam
+    ? (getTeamEmblem(myTeam.emoji)?.color ?? null) ?? myTeam.color
+    : undefined;
   const canPlay = Boolean(
     session &&
       me &&
@@ -124,17 +133,31 @@ export default function PlaySessionPage({
   }
 
   return (
-    <PageEnter className="mx-auto w-full max-w-lg space-y-5 px-4 py-8">
-      <PageItem className="text-center">
-        <p className="text-sm text-[var(--fg-muted)]">{session.joinCode}</p>
-        <h1 className="font-display text-3xl font-extrabold">Hey, {me.name}</h1>
-        {myOverallRank > 0 && (
-          <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            Overall rank <span className="font-bold text-[var(--fg)]">#{myOverallRank}</span>
-            {board[myOverallRank - 1] ? ` · ${board[myOverallRank - 1]!.total} pts` : ""}
-          </p>
-        )}
-      </PageItem>
+    <PageEnter className="mx-auto w-full max-w-md space-y-4 px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-lg sm:space-y-5 sm:px-4 sm:py-8">
+      {session.status === "lobby" ? (
+        <PageItem>
+          <LobbyReadyBanner
+            name={me.name}
+            playerCount={session.players.length}
+            avatar={me.emoji}
+            joinCode={session.joinCode}
+            teamName={myTeam?.name}
+            teamEmoji={myTeam?.emoji}
+            teamColor={teamColor}
+          />
+        </PageItem>
+      ) : (
+        <PageItem className="text-center">
+          <p className="text-sm text-[var(--fg-muted)]">{session.joinCode}</p>
+          <h1 className="font-display text-3xl font-extrabold">Hey, {me.name}</h1>
+          {myOverallRank > 0 && (
+            <p className="mt-1 text-sm text-[var(--fg-muted)]">
+              Overall rank <span className="font-bold text-[var(--fg)]">#{myOverallRank}</span>
+              {board[myOverallRank - 1] ? ` · ${board[myOverallRank - 1]!.total} pts` : ""}
+            </p>
+          )}
+        </PageItem>
+      )}
 
       {session.status !== "lobby" && (
         <PageItem>
@@ -148,57 +171,76 @@ export default function PlaySessionPage({
 
       {session.status === "lobby" && (
         <PageItem>
-          <motion.div
-            className="card-surface text-center"
-            animate={{ boxShadow: ["0 0 0 0 rgba(56,189,248,0)", "0 0 0 8px rgba(56,189,248,0.12)", "0 0 0 0 rgba(56,189,248,0)"] }}
-            transition={{ duration: 2.4, repeat: Infinity }}
-          >
-            <p className="font-display text-xl font-bold">You&apos;re in!</p>
-            <p className="mt-2 text-[var(--fg-muted)]">
-              {session.players.length} player{session.players.length === 1 ? "" : "s"} connected.
-              Keep this screen open — games launch automatically when the host starts each round.
-            </p>
-          </motion.div>
+          <div className="relative overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg-elevated)] p-4 sm:rounded-[1.75rem] sm:p-5">
+            <div
+              className="pointer-events-none absolute inset-0"
+              aria-hidden
+              style={{
+                background:
+                  "radial-gradient(ellipse 70% 60% at 80% 0%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 55%), radial-gradient(ellipse 50% 45% at 10% 100%, color-mix(in srgb, var(--primary-from) 10%, transparent), transparent 50%)",
+              }}
+            />
+            <div className="relative">
+              <LobbyRoster
+                mode={session.mode}
+                players={session.players}
+                teams={session.teams}
+                large
+                maxHeightClass={
+                  session.players.length > 8
+                    ? "max-h-[min(22rem,48dvh)] sm:max-h-[min(26rem,50dvh)]"
+                    : ""
+                }
+                highlightPlayerId={me.id}
+              />
+            </div>
+          </div>
         </PageItem>
       )}
 
       {session.status === "lobby" && (
         <PageItem>
-          <LobbyGamesList order={session.gameOrder} />
+          <div className="relative overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg-elevated)] p-4 sm:rounded-[1.75rem] sm:p-5">
+            <div
+              className="pointer-events-none absolute inset-0"
+              aria-hidden
+              style={{
+                background:
+                  "radial-gradient(ellipse 60% 70% at 100% 0%, color-mix(in srgb, var(--primary-from) 10%, transparent), transparent 50%)",
+              }}
+            />
+            <div className="relative">
+              <LobbyGamesList order={session.gameOrder} layout="strip" title="Up next" />
+            </div>
+          </div>
         </PageItem>
       )}
 
       {session.status === "active" && currentGame && (
         <PageItem>
-          <div className="card-surface space-y-4 text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-[var(--fg-muted)]">
-              Game {gameIndex} of {session.gameOrder.length}
-            </p>
-            <h2 className="font-display text-3xl font-extrabold">{currentGame.title}</h2>
-
-            {myGameRow?.done ? (
-              <motion.div
-                initial={{ scale: 0.94, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="rounded-2xl bg-emerald-500/15 px-4 py-5"
-              >
-                <p className="font-display text-xl font-bold">Score submitted</p>
-                <p className="mt-1 text-[var(--fg-muted)]">
-                  {myGameRow.score}
-                  {myGameRow.detail ? ` · ${myGameRow.detail}` : ""}
-                </p>
-                <p className="mt-3 text-sm text-[var(--fg-muted)]">
-                  {roundComplete
-                    ? "Everyone’s in — waiting for the host to start the next game."
-                    : othersWaiting > 0
-                      ? `Waiting for ${othersWaiting} other player${othersWaiting === 1 ? "" : "s"}…`
-                      : "Waiting for the host…"}
-                </p>
-              </motion.div>
-            ) : (
+          {myGameRow?.done ? (
+            <ScoreSubmittedCard
+              gameTitle={currentGame.title}
+              gameIndex={gameIndex}
+              gameTotal={session.gameOrder.length}
+              score={myGameRow.score ?? 0}
+              detail={myGameRow.detail}
+              playerEmoji={myGameRow.emoji || me.emoji || ""}
+              playerColor={teamColor || myGameRow.color}
+              submittedCount={gameBoard.filter((r) => r.done).length}
+              playerCount={session.players.length}
+              roundComplete={roundComplete}
+              othersWaiting={othersWaiting}
+            />
+          ) : (
+            <div className="card-surface space-y-3 text-center">
+              <p className="text-sm font-semibold uppercase tracking-widest text-[var(--fg-muted)]">
+                Game {gameIndex} of {session.gameOrder.length}
+              </p>
+              <h2 className="font-display text-3xl font-extrabold">{currentGame.title}</h2>
               <p className="text-[var(--fg-muted)]">Waiting for the host…</p>
-            )}
-          </div>
+            </div>
+          )}
         </PageItem>
       )}
 
@@ -225,12 +267,14 @@ export default function PlaySessionPage({
         </PageItem>
       )}
 
-      <PageItem>
-        <OverallLeaderboard
-          rows={board}
-          highlightId={session.mode === "teams" ? me.teamId : me.id}
-        />
-      </PageItem>
+      {session.status !== "lobby" && (
+        <PageItem>
+          <OverallLeaderboard
+            rows={board}
+            highlightId={session.mode === "teams" ? me.teamId : me.id}
+          />
+        </PageItem>
+      )}
 
       {session.status === "active" && (
         <PageItem>

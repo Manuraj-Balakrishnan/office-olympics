@@ -23,7 +23,7 @@ export default function SetupPage() {
       : mode === "teams" && teams.length >= 2 && players.length >= 2;
 
   return (
-    <PageEnter className="mx-auto w-full max-w-3xl space-y-10 px-4 py-10">
+    <PageEnter className="mx-auto w-full max-w-4xl space-y-10 px-4 py-10">
       <PageItem>
         <h1 className="font-display text-3xl font-extrabold md:text-5xl">
           Tournament Setup
@@ -74,7 +74,7 @@ export default function SetupPage() {
                       teamPlayMode: e.target.value as "everyone" | "one-rep",
                     })
                   }
-                  className="w-full rounded-xl border border-white/10 bg-[var(--bg-elevated)] px-3 py-2.5 sm:w-auto"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2.5 sm:w-auto"
                 >
                   <option value="one-rep">One Rep Per Round</option>
                   <option value="everyone">Everyone Plays</option>

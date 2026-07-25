@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import type { GameResultSummary, GameScoreRow, LeaderboardRow } from "@/hooks/useSession";
 import { resolveGame } from "@/data/games";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
@@ -34,6 +35,10 @@ const GAME_ICONS: Record<string, LucideIcon> = {
   HelpCircle,
 };
 
+export function gameIconFor(iconName: string): LucideIcon {
+  return GAME_ICONS[iconName] ?? Zap;
+}
+
 export function OverallLeaderboard({
   rows,
   highlightId,
@@ -46,14 +51,19 @@ export function OverallLeaderboard({
   title?: string;
 }) {
   return (
-    <div className={compact ? "" : "card-surface"}>
+    <div className={compact ? "" : "card-surface !p-0 overflow-hidden"}>
       {!compact && (
-        <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
-          <Trophy className="h-5 w-5 text-yellow-400" />
-          {title}
-        </h3>
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-3.5 py-3 sm:px-5 sm:py-3.5">
+          <h3 className="flex min-w-0 items-center gap-2 font-display text-base font-bold sm:text-lg">
+            <Trophy className="h-4 w-4 shrink-0 text-[var(--primary-from)] sm:h-5 sm:w-5" />
+            <span className="truncate">{title}</span>
+          </h3>
+          <p className="shrink-0 rounded-full bg-tone-8 px-2 py-0.5 text-[11px] font-bold tabular-nums text-[var(--fg)] sm:px-2.5 sm:py-1 sm:text-xs">
+            {rows.length}
+          </p>
+        </div>
       )}
-      <ol className="space-y-2">
+      <ol className={compact ? "space-y-2" : "divide-y divide-[var(--border)]"}>
         <AnimatePresence initial={false}>
           {rows.map((row, i) => {
             const mine = highlightId === row.participant.id;
@@ -63,20 +73,30 @@ export function OverallLeaderboard({
                 layout
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${
-                  mine ? "bg-[var(--ring)]/25 ring-1 ring-[var(--ring)]" : "bg-white/5"
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 text-sm sm:gap-3 sm:px-5 sm:py-3 ${
+                  compact
+                    ? `rounded-xl ${mine ? "bg-[var(--ring)]/25 ring-1 ring-[var(--ring)]" : "bg-tone-5"}`
+                    : mine
+                      ? "bg-[color-mix(in_srgb,var(--ring)_12%,transparent)]"
+                      : "transition hover:bg-tone-4"
                 }`}
               >
-                <span className="w-7 font-display font-bold text-[var(--fg-muted)]">
+                <span className="w-7 shrink-0 font-display font-bold text-[var(--fg-muted)]">
                   {i < 3 ? MEDAL[i] : `#${i + 1}`}
                 </span>
-                <span className="text-lg">{row.participant.emoji}</span>
+                <PlayerAvatar
+                  avatar={row.participant.emoji}
+                  name={row.participant.name}
+                  size="sm"
+                  rounded="rounded-lg"
+                  color={row.participant.color}
+                />
                 <span className="min-w-0 flex-1 truncate font-semibold">
                   {row.participant.name}
                   {mine ? " · you" : ""}
                 </span>
                 <span
-                  className="font-display text-lg font-extrabold"
+                  className="font-display text-lg font-extrabold tabular-nums"
                   style={{ color: row.participant.color }}
                 >
                   {row.total}
@@ -86,7 +106,9 @@ export function OverallLeaderboard({
           })}
         </AnimatePresence>
         {rows.length === 0 && (
-          <li className="text-sm text-[var(--fg-muted)]">No scores yet — first game pending.</li>
+          <li className={`text-sm text-[var(--fg-muted)] ${compact ? "" : "px-5 py-6"}`}>
+            No scores yet — first game pending.
+          </li>
         )}
       </ol>
     </div>
@@ -118,14 +140,14 @@ export function CurrentGameScores({
                 row.isTurn
                   ? "bg-[var(--ring)]/25 ring-1 ring-[var(--ring)]"
                   : highlightId === row.playerId
-                    ? "bg-white/10"
-                    : "bg-white/5"
+                    ? "bg-tone-10"
+                    : "bg-tone-5"
               }`}
             >
               <span className="w-6 text-sm text-[var(--fg-muted)]">
                 {rank === undefined ? "·" : rank < 3 ? MEDAL[rank] : `#${rank + 1}`}
               </span>
-              <span className="text-xl">{row.emoji}</span>
+              <PlayerAvatar avatar={row.emoji} name={row.name} size="sm" rounded="rounded-lg" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">
                   {row.name}
@@ -168,12 +190,17 @@ export function PerGameTops({
   if (list.length === 0) return null;
 
   return (
-    <div className="space-y-3">
-      <h3 className="flex items-center gap-2 font-display text-lg font-bold sm:text-xl">
-        <Medal className="h-5 w-5 text-[var(--accent-warm)]" />
-        Per-game leaders
-      </h3>
-      <ul className="overflow-hidden rounded-2xl border border-[var(--border)] divide-y divide-white/5">
+    <div className="card-surface !p-0 space-y-0 overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-3.5 py-3 sm:px-5 sm:py-3.5">
+        <h3 className="flex min-w-0 items-center gap-2 font-display text-base font-bold sm:text-lg">
+          <Medal className="h-4 w-4 shrink-0 text-[var(--accent-warm)] sm:h-5 sm:w-5" />
+          <span className="truncate">Per-game leaders</span>
+        </h3>
+        <p className="shrink-0 rounded-full bg-tone-8 px-2 py-0.5 text-[11px] font-bold tabular-nums text-[var(--fg)] sm:px-2.5 sm:py-1 sm:text-xs">
+          {list.length}
+        </p>
+      </div>
+      <ul className="divide-y divide-[var(--border)]">
         {list.map((g) => {
           const rows = showFullRankings
             ? g.rankings.filter((r) => r.done)
@@ -182,10 +209,10 @@ export function PerGameTops({
           return (
             <li
               key={g.gameId}
-              className={`px-4 py-3 sm:px-5 ${
+              className={`px-3.5 py-3 transition hover:bg-tone-4 sm:px-5 ${
                 g.isCurrent
-                  ? "bg-[color-mix(in_srgb,var(--ring)_12%,transparent)]"
-                  : "bg-[color-mix(in_srgb,var(--bg-card)_75%,transparent)]"
+                  ? "bg-[color-mix(in_srgb,var(--primary-from)_10%,transparent)]"
+                  : ""
               }`}
             >
               <div className="flex items-center gap-3">
@@ -195,14 +222,21 @@ export function PerGameTops({
                       {g.title}
                     </p>
                     {g.isCurrent && (
-                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--ring)]">
+                      <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--primary-from)_20%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--primary-from)]">
                         Live
                       </span>
                     )}
                   </div>
                   {!showFullRankings && winner && (
-                    <p className="mt-0.5 truncate text-xs text-[var(--fg-muted)] sm:text-sm">
-                      {MEDAL[0]} {winner.emoji} {winner.name}
+                    <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-[var(--fg-muted)] sm:text-sm">
+                      <span>{MEDAL[0]}</span>
+                      <PlayerAvatar
+                        avatar={winner.emoji}
+                        name={winner.name}
+                        size="xs"
+                        rounded="rounded-md"
+                      />
+                      <span className="truncate">{winner.name}</span>
                     </p>
                   )}
                 </div>
@@ -225,7 +259,12 @@ export function PerGameTops({
                       <span className="w-6">
                         {i < 3 ? MEDAL[i] : `#${i + 1}`}
                       </span>
-                      <span>{row.emoji}</span>
+                      <PlayerAvatar
+                        avatar={row.emoji}
+                        name={row.name}
+                        size="xs"
+                        rounded="rounded-md"
+                      />
                       <span className="min-w-0 flex-1 truncate font-medium">
                         {row.name}
                       </span>
@@ -274,7 +313,7 @@ export function GameProgressBar({
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5 rounded-2xl border border-[var(--border)] bg-tone-4 px-3 py-2.5 sm:px-4">
       {order.map((id, i) => {
         const done = played.includes(id);
         const active = currentId === id;
@@ -286,13 +325,13 @@ export function GameProgressBar({
               done
                 ? "bg-[var(--primary-from)]"
                 : active
-                  ? "bg-[var(--ring)]"
-                  : "bg-white/10"
+                  ? "bg-[var(--ring)] shadow-[0_0_10px_color-mix(in_srgb,var(--ring)_45%,transparent)]"
+                  : "bg-tone-10"
             }`}
           />
         );
       })}
-      <span className="ml-2 shrink-0 text-xs tabular-nums text-[var(--fg-muted)]">
+      <span className="ml-1.5 shrink-0 text-xs font-semibold tabular-nums text-[var(--fg-muted)]">
         {Math.min(idx + 1, order.length)}/{order.length}
       </span>
     </div>
@@ -303,9 +342,18 @@ export function GameProgressBar({
 export function LobbyGamesList({
   order,
   title = "Games lineup",
+  columns = false,
+  compact = false,
+  layout = "list",
 }: {
   order: string[];
   title?: string;
+  /** 2-column grid from sm up (cast / wide screens) */
+  columns?: boolean;
+  /** Denser rows — hide descriptions (player waiting room) */
+  compact?: boolean;
+  /** strip = horizontal filmstrip (waiting room stage layout) */
+  layout?: "list" | "strip";
 }) {
   const games = order
     .map((id, i) => {
@@ -314,40 +362,131 @@ export function LobbyGamesList({
     })
     .filter((g): g is NonNullable<typeof g> => g != null);
 
+  if (layout === "strip") {
+    return (
+      <section className="@container min-w-0">
+        <div className="mb-3 flex items-baseline justify-between gap-3 sm:mb-3.5">
+          <h3 className="font-display text-base font-bold sm:text-lg">{title}</h3>
+          <p className="text-xs tabular-nums text-[var(--fg-muted)] sm:text-sm">
+            <span className="font-bold text-[var(--fg)]">{games.length}</span>
+            {" round"}
+            {games.length === 1 ? "" : "s"}
+          </p>
+        </div>
+        {/* Container-aware cols so narrow player pages stay readable */}
+        <ol className="grid grid-cols-2 gap-2.5 @min-[22rem]:grid-cols-3 @min-[32rem]:grid-cols-4 @min-[44rem]:grid-cols-5">
+          {games.map(({ index, game }) => {
+            const Icon = GAME_ICONS[game.icon] ?? Zap;
+            return (
+              <li
+                key={game.id}
+                className="group relative flex flex-col gap-2 overflow-hidden rounded-2xl border border-[var(--border)] bg-tone-4/90 p-2.5 transition hover:border-[var(--border-strong)] hover:bg-tone-5 sm:gap-2.5 sm:p-3"
+              >
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100"
+                  aria-hidden
+                  style={{
+                    background:
+                      "radial-gradient(ellipse 80% 70% at 100% 0%, color-mix(in srgb, var(--primary-from) 14%, transparent), transparent 55%)",
+                  }}
+                />
+                <div className="relative flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold tabular-nums tracking-wide text-[var(--fg-muted)]">
+                    {String(index).padStart(2, "0")}
+                  </span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--primary-from)_18%,transparent)] text-[var(--primary-from)] sm:h-8 sm:w-8 sm:rounded-xl">
+                    <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </span>
+                </div>
+                <p className="relative line-clamp-2 text-[12px] font-semibold leading-snug sm:text-[13px]">
+                  {game.title}
+                </p>
+              </li>
+            );
+          })}
+          {games.length === 0 && (
+            <li className="col-span-full px-2 py-4 text-sm text-[var(--fg-muted)]">
+              No games scheduled.
+            </li>
+          )}
+        </ol>
+      </section>
+    );
+  }
+
   return (
-    <section className="card-surface">
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <h3 className="font-display text-lg font-bold">{title}</h3>
-        <p className="text-xs font-semibold tabular-nums text-[var(--fg-muted)]">
+    <section className="card-surface !p-0 overflow-hidden">
+      <div
+        className={`flex items-center justify-between gap-3 border-b border-[var(--border)] ${
+          compact ? "px-3.5 py-2.5 sm:px-4" : "px-3.5 py-3 sm:px-5 sm:py-3.5"
+        }`}
+      >
+        <div className="min-w-0">
+          <h3
+            className={`font-display font-bold ${compact ? "text-sm sm:text-base" : "text-base sm:text-lg"}`}
+          >
+            {title}
+          </h3>
+          {!compact && (
+            <p className="mt-0.5 hidden text-xs text-[var(--fg-muted)] sm:block">
+              Play order for this tournament
+            </p>
+          )}
+        </div>
+        <p className="shrink-0 rounded-full bg-tone-8 px-2 py-0.5 text-[11px] font-bold tabular-nums text-[var(--fg)]">
           {games.length} round{games.length === 1 ? "" : "s"}
         </p>
       </div>
-      <ol className="space-y-1.5">
+      <ol
+        className={
+          columns
+            ? "grid divide-y divide-[var(--border)] sm:grid-cols-2 sm:gap-px sm:divide-y-0 sm:bg-[var(--border)]"
+            : "divide-y divide-[var(--border)]"
+        }
+      >
         {games.map(({ index, game }) => {
           const Icon = GAME_ICONS[game.icon] ?? Zap;
           return (
             <li
               key={game.id}
-              className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5 sm:gap-3.5"
+              className={`flex items-center gap-2.5 transition hover:bg-tone-4 sm:gap-3 ${
+                compact
+                  ? "px-3.5 py-2 sm:px-4 sm:py-2.5"
+                  : "px-3.5 py-2.5 sm:px-5 sm:py-3"
+              } ${
+                columns
+                  ? "bg-[var(--bg-card)] sm:bg-[color-mix(in_srgb,var(--bg-card)_92%,transparent)]"
+                  : ""
+              }`}
             >
-              <span className="w-5 shrink-0 text-center text-sm font-semibold tabular-nums text-[var(--fg-muted)]">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-tone-8 text-[11px] font-bold tabular-nums text-[var(--fg-muted)]">
                 {index}
               </span>
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--primary-from)_18%,transparent)] text-[var(--primary-from)]">
-                <Icon className="h-4 w-4" />
+              <span
+                className={`flex shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--primary-from)_18%,transparent)] text-[var(--primary-from)] ${
+                  compact ? "h-7 w-7" : "h-8 w-8 sm:h-9 sm:w-9 sm:rounded-xl"
+                }`}
+              >
+                <Icon className={compact ? "h-3.5 w-3.5" : "h-3.5 w-3.5 sm:h-4 sm:w-4"} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{game.title}</p>
-                <p className="truncate text-xs text-[var(--fg-muted)]">{game.description}</p>
+                <p className="truncate text-sm font-semibold">{game.title}</p>
+                {!compact && (
+                  <p className="truncate text-[11px] text-[var(--fg-muted)] sm:text-xs">
+                    {game.description}
+                  </p>
+                )}
               </div>
-              <span className="hidden shrink-0 rounded-lg bg-white/5 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--fg-muted)] sm:inline">
-                {game.difficulty}
-              </span>
+              {!compact && (
+                <span className="hidden shrink-0 rounded-lg border border-[var(--border)] bg-tone-5 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--fg-muted)] md:inline">
+                  {game.difficulty}
+                </span>
+              )}
             </li>
           );
         })}
         {games.length === 0 && (
-          <li className="px-1 py-3 text-sm text-[var(--fg-muted)]">No games scheduled.</li>
+          <li className="px-5 py-6 text-sm text-[var(--fg-muted)]">No games scheduled.</li>
         )}
       </ol>
     </section>

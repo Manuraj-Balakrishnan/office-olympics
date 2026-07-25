@@ -12,16 +12,16 @@ export default function HomePage() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <section className="relative flex min-h-[calc(100dvh-4.25rem)] flex-1 flex-col overflow-hidden">
+    <section className="relative flex min-h-[calc(100dvh-5.5rem)] flex-1 flex-col overflow-x-hidden sm:min-h-[calc(100dvh-4.75rem)]">
       <OfficeGamesScene />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-        <div className="relative z-10 max-w-xl lg:max-w-[34rem]">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 py-8 sm:py-16 lg:py-20">
+        <div className="relative z-10 w-full max-w-xl lg:max-w-[34rem]">
           <motion.h1
             initial={reduceMotion ? false : { opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...springSoft, delay: 0.08 }}
-            className="font-display text-[clamp(2.85rem,9.5vw,6.75rem)] font-extrabold leading-[0.92] tracking-[-0.045em]"
+            className="font-display text-[clamp(2.5rem,12vw,6.75rem)] font-extrabold leading-[0.92] tracking-[-0.045em]"
           >
             <span className="text-[var(--fg)]">Office</span>
             <br />
@@ -32,7 +32,7 @@ export default function HomePage() {
             initial={reduceMotion ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...springSoft, delay: 0.18 }}
-            className="mt-5 max-w-md text-base leading-relaxed text-[var(--fg-muted)] sm:mt-6 sm:text-lg"
+            className="mt-4 max-w-md text-[0.95rem] leading-relaxed text-[var(--fg-muted)] sm:mt-6 sm:text-lg"
           >
             Turn the open plan into a tournament floor — host a code, play mini-games,
             cast the leaderboard.
@@ -42,13 +42,19 @@ export default function HomePage() {
             initial={reduceMotion ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...springSoft, delay: 0.28 }}
-            className="mt-8 flex w-full max-w-md flex-col gap-3 sm:mt-9 sm:max-w-none sm:flex-row sm:items-center"
+            className="mt-7 flex w-full flex-col gap-2.5 sm:mt-9 sm:max-w-none sm:flex-row sm:items-center sm:gap-3"
           >
-            <Link href="/host" className="btn-primary animate-pulse-ring sm:text-lg">
+            <Link
+              href="/host"
+              className="btn-primary animate-pulse-ring w-full justify-center sm:w-auto sm:text-lg"
+            >
               Host tournament
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-5 w-5 shrink-0" />
             </Link>
-            <Link href="/join" className="btn-secondary sm:text-base">
+            <Link
+              href="/join"
+              className="btn-secondary w-full justify-center sm:w-auto sm:text-base"
+            >
               Join with code
             </Link>
           </motion.div>
@@ -57,13 +63,13 @@ export default function HomePage() {
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.48, duration: 0.45 }}
-            className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[var(--fg-muted)]"
+            className="mt-6 flex flex-col gap-2.5 text-sm text-[var(--fg-muted)] sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-2"
           >
             <Link
               href="/setup"
               className="inline-flex items-center gap-2 transition hover:text-[var(--fg)]"
             >
-              <Users className="h-4 w-4" />
+              <Users className="h-4 w-4 shrink-0" />
               Classic single-device
             </Link>
             {tournamentStarted && (

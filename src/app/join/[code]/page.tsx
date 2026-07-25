@@ -4,7 +4,9 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { TEAM_EMOJIS } from "@/data/games";
+import { DEFAULT_PLAYER_AVATAR } from "@/data/playerAvatars";
+import { DEFAULT_TEAM_EMBLEM } from "@/data/teamEmblems";
+import { AvatarPicker, TeamEmblemPicker } from "@/components/PlayerAvatar";
 import { saveIdentity } from "@/hooks/useSession";
 import type { TournamentSession } from "@/types/tournament";
 import { PageEnter, PageItem } from "@/components/layout/PageEnter";
@@ -22,7 +24,8 @@ export default function JoinWithCodePage({
   const [teamId, setTeamId] = useState("");
   const [createTeam, setCreateTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
-  const [emoji, setEmoji] = useState(TEAM_EMOJIS[0]!);
+  const [emoji, setEmoji] = useState(DEFAULT_TEAM_EMBLEM);
+  const [avatar, setAvatar] = useState(DEFAULT_PLAYER_AVATAR);
   const [asIndividual, setAsIndividual] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -56,6 +59,7 @@ export default function JoinWithCodePage({
         body: JSON.stringify({
           code,
           name,
+          emoji: avatar,
           teamId: createTeam || asIndividual ? undefined : teamId || undefined,
           createTeam:
             createTeam && preview?.mode === "teams"
@@ -100,7 +104,7 @@ export default function JoinWithCodePage({
   }
 
   return (
-    <PageEnter className="mx-auto w-full max-w-md space-y-6 px-4 py-10">
+    <PageEnter className="mx-auto w-full max-w-lg space-y-6 px-4 py-10">
       <PageItem className="text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-[var(--fg-muted)]">
           Joining
@@ -115,6 +119,12 @@ export default function JoinWithCodePage({
         <p className="mt-2 text-[var(--fg-muted)]">
           {preview.mode === "teams" ? "Team tournament" : "Individual tournament"} · Host-paced
         </p>
+      </PageItem>
+
+      <PageItem>
+        <div className="card-surface !p-4 sm:!p-5">
+          <AvatarPicker value={avatar} onChange={setAvatar} />
+        </div>
       </PageItem>
 
       <PageItem>
@@ -149,12 +159,12 @@ export default function JoinWithCodePage({
               <select
                 value={teamId}
                 onChange={(e) => setTeamId(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[var(--bg-elevated)] px-3 py-2"
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2"
               >
                 <option value="">Select a team…</option>
                 {preview.teams.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.emoji} {t.name}
+                    {t.name}
                   </option>
                 ))}
               </select>
@@ -171,26 +181,14 @@ export default function JoinWithCodePage({
               Create a new team
             </label>
             {createTeam && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <input
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   placeholder="Team name"
                   className="input-field !rounded-xl"
                 />
-                <div className="flex flex-wrap gap-1">
-                  {TEAM_EMOJIS.map((e) => (
-                    <motion.button
-                      key={e}
-                      type="button"
-                      whileTap={{ scale: 0.9 }}
-                      className={`rounded-lg px-2 py-1 text-xl transition ${emoji === e ? "bg-white/20 ring-2 ring-[var(--ring)]" : "bg-white/5"}`}
-                      onClick={() => setEmoji(e)}
-                    >
-                      {e}
-                    </motion.button>
-                  ))}
-                </div>
+                <TeamEmblemPicker value={emoji} onChange={setEmoji} label="Team emblem" />
               </div>
             )}
             <label className="flex items-center gap-2 text-sm">

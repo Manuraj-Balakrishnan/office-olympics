@@ -119,8 +119,8 @@ export default function DashboardPage() {
                   <p className="mt-1 text-sm text-[var(--fg-muted)]">{game.description}</p>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs font-semibold">
-                  <span className="rounded-lg bg-white/10 px-2 py-1">{game.difficulty}</span>
-                  <span className="rounded-lg bg-white/10 px-2 py-1">
+                  <span className="rounded-lg bg-tone-10 px-2 py-1">{game.difficulty}</span>
+                  <span className="rounded-lg bg-tone-10 px-2 py-1">
                     {game.durationSec}s
                   </span>
                 </div>

@@ -6,11 +6,11 @@ export const GAMES: GameDefinition[] = [
     title: "Reaction Time",
     description: "Three rounds — wait for green, tap fast. Best average wins.",
     howToPlay: [
-      "You get 3 rounds. Score is your average reaction time.",
-      "Screen goes red — do not tap yet.",
+      "3 rounds — your score is the average reaction time.",
+      "Wait on red. Do not tap yet.",
       "When it flips green, tap as fast as you can.",
       "Tap too early = false start (that round resets).",
-      "Lower average milliseconds = more points.",
+      "Lower average ms = more points.",
     ],
     icon: "Zap",
     difficulty: "Easy",
@@ -23,10 +23,10 @@ export const GAMES: GameDefinition[] = [
     title: "Simon Pattern",
     description: "Repeat the growing color sequence before you slip.",
     howToPlay: [
-      "Watch the pads light up in order.",
-      "Tap the same sequence back from memory.",
-      "Each round adds one more step.",
-      "Your score is the longest sequence you finish.",
+      "Watch the pads light up — then tap the same order back.",
+      "Each clear adds one more step to the chain.",
+      "Playback speeds up as you climb.",
+      "One wrong pad ends the run. Score = longest chain.",
     ],
     icon: "Music",
     difficulty: "Medium",
@@ -37,13 +37,13 @@ export const GAMES: GameDefinition[] = [
   {
     id: "memory",
     title: "Memory Match",
-    description: "Flip office emoji pairs — streak combos and clear bonuses win.",
+    description: "Flip office photo pairs — streak combos and clear bonuses win.",
     howToPlay: [
       "Tap two cards to flip them.",
-      "Match identical office emoji pairs.",
+      "Match identical office photo pairs.",
       "Chain matches for combo bonus points.",
       "Clear the board fast for a speed bonus.",
-      "Fewer moves = higher score.",
+      "Fewer moves and faster clears = higher score.",
     ],
     icon: "LayoutGrid",
     difficulty: "Easy",
@@ -54,27 +54,29 @@ export const GAMES: GameDefinition[] = [
   {
     id: "spot-difference",
     title: "Spot the Difference",
-    description: "Find all 15 hidden differences in a classic cartoon illustration.",
+    description: "Three original illustrator puzzles — Easy country ride, Medium pirate ships, Hard kitchen cartoon.",
     howToPlay: [
-      "Compare the two cartoon pictures.",
+      "Play three stages in order: Easy → Medium → Hard.",
+      "Compare the left (original) and right pictures.",
       "Tap every difference on the right image.",
-      "There are 15 differences — find them all.",
-      "Clear all 15 faster for a bigger speed bonus.",
+      "Each stage gives you 2 hints — a pulse marks the area (you still tap to score).",
+      "Hints cost a few points. Faster full clears earn a speed bonus.",
     ],
     icon: "Search",
-    difficulty: "Medium",
-    durationSec: 120,
+    difficulty: "Hard",
+    durationSec: 240,
     category: "memory",
     route: "/game/spot-difference",
   },
   {
     id: "one-second",
     title: "Seconds Challenge",
-    description: "Memorize a busy photo in 1.5 seconds, then answer.",
+    description: "Three real office photos flash for 3 seconds — then prove what you saw.",
     howToPlay: [
-      "A photo flashes for 1.5 seconds — memorize it.",
-      "Then answer questions about what you saw.",
-      "Faster correct answers earn more points.",
+      "3 office photos — each flashes for 3 seconds.",
+      "Memorize details: colors, objects, and people.",
+      "Then answer 5 questions about what you saw.",
+      "Faster correct answers earn a speed bonus.",
       "Wrong answers score zero for that question.",
     ],
     icon: "Eye",
@@ -86,16 +88,17 @@ export const GAMES: GameDefinition[] = [
   {
     id: "stroop",
     title: "Stroop Challenge",
-    description: "Tap the ink color — ignore the word. Rapid-fire chaos.",
+    description: "Tap the ink color — ignore the word. 90 seconds of rapid-fire chaos.",
     howToPlay: [
-      "You will see a color word (like RED).",
+      "A color word appears (like RED).",
       "Ignore the word — tap the ink color instead.",
       "Example: BLUE written in green → tap GREEN.",
-      "15 rapid rounds — stay sharp.",
+      "90 seconds — build a streak of correct taps.",
+      "Buttons shuffle each round. Wrong tap breaks your streak.",
     ],
     icon: "Palette",
     difficulty: "Medium",
-    durationSec: 30,
+    durationSec: 90,
     category: "reflex",
     route: "/game/stroop",
   },
@@ -105,8 +108,8 @@ export const GAMES: GameDefinition[] = [
     description: "Type the office-humor paragraph. WPM × accuracy.",
     howToPlay: [
       "Type the paragraph exactly as shown.",
-      "Green letters are correct; red means a typo.",
-      "Finish before time runs out.",
+      "Green = correct letter; red = typo.",
+      "Finish the whole paragraph to lock your score.",
       "Score = WPM × accuracy.",
     ],
     icon: "Keyboard",
@@ -118,12 +121,12 @@ export const GAMES: GameDefinition[] = [
   {
     id: "speed-puzzle",
     title: "Speed Puzzle",
-    description: "Assemble the jigsaw as fast as you can. Fastest player wins.",
+    description: "Assemble the jigsaw fast — quicker clears earn more points.",
     howToPlay: [
       "Pieces start scattered in the tray below.",
-      "Drag each piece onto the wooden board.",
-      "Drop near the right spot — it snaps in when it fits.",
-      "Finish the jigsaw as fast as you can.",
+      "Drag each piece onto the board.",
+      "Drop near the right spot — it snaps when it fits.",
+      "Faster finishes score more. Slow solves score less.",
     ],
     icon: "Puzzle",
     difficulty: "Medium",
@@ -137,9 +140,10 @@ export const GAMES: GameDefinition[] = [
     description: "Unscramble office words as fast as you can.",
     howToPlay: [
       "Letters are jumbled — unscramble the word.",
+      "A clue sits under the letters.",
       "Type your answer and hit Check / Enter.",
-      "Need help? Use Hint once per word to reveal the first letter.",
-      "Still stuck? Hit Pass to skip to the next word.",
+      "Hint once per word to reveal the first letter.",
+      "Pass skips to the next word if you are stuck.",
       "Solve as many as you can in 60 seconds.",
     ],
     icon: "Shuffle",
@@ -151,13 +155,13 @@ export const GAMES: GameDefinition[] = [
   {
     id: "trivia",
     title: "Rapid-Fire Quiz",
-    description: "15 questions, 8 seconds each, speed bonuses like Kahoot.",
+    description: "15 questions, 10 seconds each, speed bonuses like Kahoot.",
     howToPlay: [
-      "15 questions — 8 seconds each.",
-      "Tap an answer before the ring runs out.",
-      "Need help? Use Hint once per question to remove 2 wrong answers (smaller speed bonus).",
+      "15 questions — 10 seconds each.",
+      "Tap before the ring runs out. Green = correct, red = wrong.",
+      "Hint once per question removes 1 wrong answer (smaller bonus).",
       "Faster correct answers earn bigger bonuses.",
-      "Wrong or timeout = no points for that Q.",
+      "Wrong or timeout = no points for that question.",
     ],
     icon: "HelpCircle",
     difficulty: "Medium",
@@ -187,7 +191,8 @@ export function resolveGame(id: string | null | undefined): GameDefinition | nul
   return migrated ? GAME_MAP[migrated] : null;
 }
 
-/** Drop unknown ids and remap legacy ones; keep order stable and unique. */
+/** Drop unknown ids and remap legacy ones; keep order stable and unique.
+ *  Empty input stays empty (played / completed lists must not inflate). */
 export function sanitizeGameIds(ids: string[]): GameId[] {
   const out: GameId[] = [];
   const seen = new Set<GameId>();
@@ -197,6 +202,12 @@ export function sanitizeGameIds(ids: string[]): GameId[] {
     seen.add(next);
     out.push(next);
   }
+  return out;
+}
+
+/** Sanitize the tournament lineup. Empty/corrupt → full default roster. */
+export function sanitizeGameOrder(ids: string[]): GameId[] {
+  const out = sanitizeGameIds(ids);
   return out.length > 0 ? out : GAMES.map((g) => g.id);
 }
 
@@ -217,5 +228,3 @@ export const TEAM_COLORS = [
   "#0E7490",
   "#C2410C",
 ];
-
-export const TEAM_EMOJIS = ["🦁", "🐯", "🦅", "🐉", "🐺", "🦊", "🐻", "🦈"];

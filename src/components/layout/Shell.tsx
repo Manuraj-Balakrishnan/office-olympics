@@ -35,10 +35,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden gradient-olympics">
+    <div className="relative flex min-h-dvh flex-col overflow-x-hidden gradient-olympics">
       <AmbientOrbs />
       <Header />
-      <main className="relative z-10 flex flex-1 flex-col">{children}</main>
+      <main className="relative z-10 flex min-h-0 flex-1 flex-col">{children}</main>
     </div>
   );
 }

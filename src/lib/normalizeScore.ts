@@ -19,12 +19,13 @@ export function clampRawScore(gameId: GameId, rawScore: number): number {
     case "one-second":
       return Math.max(0, Math.min(800, Math.round(n)));
     case "stroop":
-      return Math.max(0, Math.min(15, Math.round(n)));
+      // Correct taps in 90s — elite ~45–55; clamp wild reports
+      return Math.max(0, Math.min(80, Math.round(n)));
     case "typing":
       return Math.max(0, Math.min(1500, Math.round(n)));
     case "speed-puzzle":
-      // Completion time in ms (or timeout penalty)
-      return Math.max(1, Math.min(180_000, Math.round(n)));
+      // Points 0–1000 (faster solve → higher). Legacy ms scores clamp into range.
+      return Math.max(0, Math.min(1000, Math.round(n)));
     case "word-scramble":
       return Math.max(0, Math.min(25, Math.round(n)));
     case "trivia":
@@ -43,9 +44,9 @@ export function clampRawScore(gameId: GameId, rawScore: number): number {
  * - memory: matches*100 + move efficiency + combo + clear/speed bonus
  * - spot-difference: round((found/15)*1000) + speed clear bonus 0–100 (1100 max)
  * - one-second: answer points (≈100–200 per correct × 3)
- * - stroop: correct count 0–15
+ * - stroop: correct taps in 90s (elite ~45)
  * - typing: round(wpm * accuracy/100 * 10), wpm capped
- * - speed-puzzle: completion time in ms (lower better)
+ * - speed-puzzle: points 0–1000 (faster completion → higher)
  * - word-scramble: words solved
  * - trivia: quiz points (100–200 per correct × 15)
  */
@@ -67,24 +68,23 @@ export function normalizeToThousand(
       // 10 steps ≈ strong; 15+ is elite → 1000
       return clamp((raw / 15) * 1000);
     case "memory":
-      // Perfect clear ~950–1100 raw → scale to 1000
+      // Perfect clear ~1050–1100 raw → 1000; messy clears land lower
       return clamp((raw / 1100) * 1000);
     case "spot-difference":
       // Clear all 15 + full time left: 1000 + 100 = 1100
       return clamp((raw / 1100) * 1000);
     case "one-second":
-      // 3 questions, ~100–200 each → max ~600
-      return clamp((raw / 600) * 1000);
+      // 3 scenes × 5 questions, ~100–200 each → max ~3000
+      return clamp((raw / 3000) * 1000);
     case "stroop":
-      return clamp((raw / 15) * 1000);
+      // ~45 correct in 90s is elite → 1000
+      return clamp((raw / 45) * 1000);
     case "typing":
       // ~100 WPM @ 100% → raw 1000; scale so ~83 WPM ≈ 1000 after *1.0
       return clamp(raw);
-    case "speed-puzzle": {
-      // Elite ~20s → 1000; 45s → ~650; 90s → ~0; incomplete uses high ms
-      const ms = Math.max(12_000, raw);
-      return clamp(1000 - (ms - 20_000) / 70);
-    }
+    case "speed-puzzle":
+      // Already scored as 0–1000 points (faster = higher)
+      return clamp(raw);
     case "word-scramble":
       // ~12 words in 60s is elite
       return clamp((raw / 12) * 1000);

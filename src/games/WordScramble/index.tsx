@@ -8,11 +8,11 @@ import { SCRAMBLE_WORDS, scrambleWord } from "@/data/scrambleWords";
 import { useSound } from "@/hooks/useSound";
 
 function nextWord(used: Set<string>) {
-  const pool = SCRAMBLE_WORDS.filter((w) => !used.has(w));
-  const word = (pool.length ? pool : SCRAMBLE_WORDS)[
+  const pool = SCRAMBLE_WORDS.filter((w) => !used.has(w.word));
+  const entry = (pool.length ? pool : SCRAMBLE_WORDS)[
     Math.floor(Math.random() * (pool.length || SCRAMBLE_WORDS.length))
   ]!;
-  return { word, scrambled: scrambleWord(word) };
+  return { word: entry.word, hint: entry.hint, scrambled: scrambleWord(entry.word) };
 }
 
 export function WordScramble() {
@@ -20,6 +20,7 @@ export function WordScramble() {
   const initial = useMemo(() => nextWord(new Set()), []);
   const [used, setUsed] = useState(() => new Set([initial.word]));
   const [word, setWord] = useState(initial.word);
+  const [hint, setHint] = useState(initial.hint);
   const [scrambled, setScrambled] = useState(initial.scrambled);
   const [input, setInput] = useState("");
   const [hintLetter, setHintLetter] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export function WordScramble() {
     const nxt = nextWord(used);
     setUsed(new Set([...used, nxt.word]));
     setWord(nxt.word);
+    setHint(nxt.hint);
     setScrambled(nxt.scrambled);
     setInput("");
     setHintLetter(null);
@@ -116,6 +118,9 @@ export function WordScramble() {
                 </motion.span>
               ))}
             </div>
+            <p className="max-w-sm text-center text-base font-medium text-[var(--fg-muted)]">
+              Hint: <span className="text-[var(--fg)]">{hint}</span>
+            </p>
             {hintLetter && (
               <p className="text-sm font-semibold text-[var(--fg-muted)]">
                 Starts with <span className="font-display text-lg text-[var(--ring)]">{hintLetter}</span>
@@ -127,7 +132,7 @@ export function WordScramble() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") submit();
               }}
-              className="w-full rounded-2xl border border-white/15 bg-[var(--bg-elevated)] px-5 py-4 text-center font-display text-2xl font-bold tracking-widest outline-none focus:ring-2 focus:ring-[var(--ring)]"
+              className="w-full rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-5 py-4 text-center font-display text-2xl font-bold tracking-widest outline-none focus:ring-2 focus:ring-[var(--ring)]"
               placeholder="TYPE WORD"
               autoFocus
               autoCapitalize="characters"

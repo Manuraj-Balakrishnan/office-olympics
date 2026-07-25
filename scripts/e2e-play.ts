@@ -104,7 +104,7 @@ async function main() {
   const p1 = await joinSession({
     code: t.joinCode,
     name: "T1",
-    createTeam: { name: "Alpha", emoji: "🦁" },
+    createTeam: { name: "Alpha", emoji: "emblem-flame" },
   });
   await joinSession({
     code: t.joinCode,

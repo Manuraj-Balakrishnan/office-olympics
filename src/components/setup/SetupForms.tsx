@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TEAM_EMOJIS } from "@/data/games";
+import { DEFAULT_PLAYER_AVATAR, nextPlayerAvatar } from "@/data/playerAvatars";
+import { DEFAULT_TEAM_EMBLEM, nextTeamEmblem, getTeamEmblem } from "@/data/teamEmblems";
+import {
+  AvatarPicker,
+  PlayerAvatar,
+  TeamEmblemPicker,
+} from "@/components/PlayerAvatar";
 import { useTournamentStore } from "@/store/useTournamentStore";
 import { Trash2 } from "lucide-react";
 
@@ -15,7 +21,7 @@ export function ModeToggle() {
       {(
         [
           ["individuals", "Individuals", "Solo glory — every player scores alone"],
-          ["teams", "Teams", "Squad up with colors & emoji mascots"],
+          ["teams", "Teams", "Squad up with colors & emblem mascots"],
         ] as const
       ).map(([value, label, desc]) => (
         <motion.button
@@ -26,12 +32,12 @@ export function ModeToggle() {
           onClick={() => setMode(value)}
           className={`relative overflow-hidden rounded-2xl border p-4 text-left transition sm:p-5 ${
             mode === value
-              ? "border-transparent gradient-primary text-white shadow-lg shadow-teal-500/25"
-              : "border-white/10 bg-white/5 hover:bg-white/10"
+              ? "border-transparent gradient-primary text-[var(--primary-fg)] shadow-lg shadow-[color-mix(in_srgb,var(--primary-from)_35%,transparent)]"
+              : "border-[var(--border)] bg-tone-5 hover:bg-tone-10"
           }`}
         >
           <p className="font-display text-lg font-bold sm:text-xl">{label}</p>
-          <p className={`mt-1 text-sm ${mode === value ? "text-white/80" : "text-[var(--fg-muted)]"}`}>
+          <p className={`mt-1 text-sm ${mode === value ? "opacity-75" : "text-[var(--fg-muted)]"}`}>
             {desc}
           </p>
         </motion.button>
@@ -45,46 +51,32 @@ export function TeamForm() {
   const addTeam = useTournamentStore((s) => s.addTeam);
   const removeTeam = useTournamentStore((s) => s.removeTeam);
   const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState(TEAM_EMOJIS[0]!);
+  const [emblem, setEmblem] = useState(DEFAULT_TEAM_EMBLEM);
+
+  const submitTeam = () => {
+    if (!name.trim()) return;
+    addTeam(name, emblem);
+    setName("");
+    setEmblem(nextTeamEmblem([...teams.map((t) => t.emoji), emblem]));
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <h3 className="font-display text-xl font-bold">Create teams</h3>
-      <div className="flex flex-wrap gap-2">
-        {TEAM_EMOJIS.map((e) => (
-          <button
-            key={e}
-            type="button"
-            onClick={() => setEmoji(e)}
-            className={`rounded-xl px-3 py-2 text-2xl transition ${
-              emoji === e ? "bg-white/20 ring-2 ring-[var(--ring)]" : "bg-white/5 hover:bg-white/10"
-            }`}
-          >
-            {e}
-          </button>
-        ))}
+      <div className="rounded-2xl border border-[var(--border)] bg-tone-4 p-4 sm:p-5">
+        <TeamEmblemPicker value={emblem} onChange={setEmblem} />
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Team name"
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--ring)]"
+          className="flex-1 rounded-xl border border-[var(--border)] bg-tone-5 px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--ring)]"
           onKeyDown={(e) => {
-            if (e.key === "Enter" && name.trim()) {
-              addTeam(name, emoji);
-              setName("");
-            }
+            if (e.key === "Enter") submitTeam();
           }}
         />
-        <button
-          type="button"
-          className="btn-primary sm:!px-4"
-          onClick={() => {
-            addTeam(name, emoji);
-            setName("");
-          }}
-        >
+        <button type="button" className="btn-primary sm:!px-4" onClick={submitTeam}>
           Add
         </button>
       </div>
@@ -97,11 +89,20 @@ export function TeamForm() {
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 12 }}
-              className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-3"
+              className="flex items-center justify-between rounded-xl bg-tone-5 px-4 py-3"
             >
-              <span>
-                <span className="mr-2 text-xl">{t.emoji}</span>
-                <span className="font-semibold" style={{ color: t.color }}>
+              <span className="flex min-w-0 items-center gap-2.5">
+                <PlayerAvatar
+                  avatar={t.emoji}
+                  name={t.name}
+                  size="sm"
+                  rounded="rounded-lg"
+                  color={(getTeamEmblem(t.emoji)?.color ?? null) ?? t.color}
+                />
+                <span
+                  className="truncate font-semibold"
+                  style={{ color: (getTeamEmblem(t.emoji)?.color ?? null) ?? t.color }}
+                >
                   {t.name}
                 </span>
               </span>
@@ -126,45 +127,51 @@ export function PlayerForm() {
   const reorderPlayers = useTournamentStore((s) => s.reorderPlayers);
   const [name, setName] = useState("");
   const [teamId, setTeamId] = useState<string>("");
+  const [avatar, setAvatar] = useState(DEFAULT_PLAYER_AVATAR);
+
+  const submitPlayer = () => {
+    if (!name.trim()) return;
+    addPlayer(
+      name,
+      mode === "teams" ? teamId || undefined : undefined,
+      avatar,
+    );
+    setName("");
+    const used = [...players.map((p) => p.emoji), avatar];
+    setAvatar(nextPlayerAvatar(used));
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <h3 className="font-display text-xl font-bold">Add players</h3>
+      <div className="rounded-2xl border border-[var(--border)] bg-tone-4 p-4 sm:p-5">
+        <AvatarPicker value={avatar} onChange={setAvatar} />
+      </div>
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Player name"
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--ring)]"
+          className="flex-1 rounded-xl border border-[var(--border)] bg-tone-5 px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--ring)]"
           onKeyDown={(e) => {
-            if (e.key === "Enter" && name.trim()) {
-              addPlayer(name, mode === "teams" ? teamId || undefined : undefined);
-              setName("");
-            }
+            if (e.key === "Enter") submitPlayer();
           }}
         />
         {mode === "teams" && (
           <select
             value={teamId}
             onChange={(e) => setTeamId(e.target.value)}
-            className="rounded-xl border border-white/10 bg-[var(--bg-elevated)] px-4 py-3"
+            className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3"
           >
             <option value="">No team</option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.emoji} {t.name}
+                {t.name}
               </option>
             ))}
           </select>
         )}
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => {
-            addPlayer(name, mode === "teams" ? teamId || undefined : undefined);
-            setName("");
-          }}
-        >
+        <button type="button" className="btn-primary" onClick={submitPlayer}>
           Add
         </button>
       </div>
@@ -175,7 +182,7 @@ export function PlayerForm() {
             layout
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white/5 px-4 py-3"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-tone-5 px-4 py-3"
           >
             <div className="flex items-center gap-2">
               <button
@@ -194,6 +201,7 @@ export function PlayerForm() {
               >
                 ↓
               </button>
+              <PlayerAvatar avatar={p.emoji} name={p.name} size="sm" rounded="rounded-lg" />
               <span className="font-semibold">{p.name}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -203,12 +211,12 @@ export function PlayerForm() {
                   onChange={(e) =>
                     assignPlayerTeam(p.id, e.target.value || undefined)
                   }
-                  className="rounded-lg border border-white/10 bg-[var(--bg-elevated)] px-2 py-1 text-sm"
+                  className="rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-2 py-1 text-sm"
                 >
                   <option value="">Unassigned</option>
                   {teams.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.emoji} {t.name}
+                      {t.name}
                     </option>
                   ))}
                 </select>

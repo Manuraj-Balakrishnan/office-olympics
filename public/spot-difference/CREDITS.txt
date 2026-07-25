@@ -1,7 +1,25 @@
 Spot the Difference assets
 ==========================
 
-cartoon-left.png / cartoon-right.png
+bike-left.png / bike-right.png  (Easy)
+  Source: Openclipart — “A boring day - spot the differences”
+  https://openclipart.org/detail/184048/a-boring-day-spot-the-differences
+  License: CC0 1.0 (public domain)
+  Split from the original top/bottom puzzle for this game.
+  Differences are from the original artwork (not added by us).
+
+pirates-left.png / pirates-right.png  (Medium)
+  Source: Wikimedia Commons — “Spot the difference between those two pirate ships.svg”
+  https://commons.wikimedia.org/wiki/File:Spot_the_difference_between_those_two_pirate_ships.svg
+  Author: Ftiercel
+  License: CC BY 3.0
+  Each ship cropped from the original diagonal layout for this game.
+  Six of the seven original differences are preserved and used as hotspots
+  (gun ports, fleur-de-lis, chest, flag bone, sword, lanterns). The rope
+  difference does not survive cleanly in the cropped pair, so it is omitted
+  rather than mapped to a false positive (a prior sail-grommet hotspot).
+
+cartoon-left.png / cartoon-right.png  (Hard)
   Source: Wikimedia Commons — "Spot the difference.png"
   https://commons.wikimedia.org/wiki/File:Spot_the_difference.png
   Author: Muband (Japanese Wikipedia)

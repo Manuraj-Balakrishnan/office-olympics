@@ -12,6 +12,7 @@ import { PageEnter, PageItem } from "@/components/layout/PageEnter";
 export default function HostCreatePage() {
   const router = useRouter();
   const [mode, setMode] = useState<TournamentMode>("individuals");
+  const [assistMode, setAssistMode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,6 +26,7 @@ export default function HostCreatePage() {
         body: JSON.stringify({
           mode,
           pacing: "host",
+          settings: { assistMode },
         }),
       });
       const json = await res.json();
@@ -78,8 +80,8 @@ export default function HostCreatePage() {
                 onClick={() => setMode(value)}
                 className={`rounded-2xl border p-4 text-left transition ${
                   mode === value
-                    ? "border-transparent gradient-primary text-white shadow-lg shadow-teal-500/20"
-                    : "border-white/10 bg-white/5"
+                    ? "border-transparent gradient-primary text-[var(--primary-fg)] shadow-lg shadow-[color-mix(in_srgb,var(--primary-from)_35%,transparent)]"
+                    : "border-[var(--border)] bg-tone-5"
                 }`}
               >
                 <Users className="mb-2 h-5 w-5" />
@@ -87,6 +89,26 @@ export default function HostCreatePage() {
               </motion.button>
             ))}
           </div>
+        </section>
+      </PageItem>
+
+      <PageItem>
+        <section className="card-surface space-y-4">
+          <h2 className="font-display text-xl font-bold">Game settings</h2>
+          <label className="flex items-center justify-between gap-4">
+            <span className="min-w-0">
+              <span className="font-semibold">Assist mode</span>
+              <span className="mt-0.5 block text-sm text-[var(--fg-muted)]">
+                Extra text labels for color-blind accessibility
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={assistMode}
+              onChange={(e) => setAssistMode(e.target.checked)}
+              className="h-5 w-5 shrink-0 accent-[var(--ring)]"
+            />
+          </label>
         </section>
       </PageItem>
 

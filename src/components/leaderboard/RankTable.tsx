@@ -3,6 +3,7 @@
 import type { PlayerOrTeam } from "@/types/tournament";
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/motion";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 export function RankTable({
   rows,
@@ -10,13 +11,13 @@ export function RankTable({
   rows: { participant: PlayerOrTeam; total: number; lastDelta: number }[];
 }) {
   return (
-    <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-[var(--bg-card)]/60 backdrop-blur-sm">
+    <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]/60 backdrop-blur-sm">
       {/* Mobile: stacked cards */}
       <motion.ul
         variants={staggerContainer}
         initial="hidden"
         animate="show"
-        className="divide-y divide-white/5 sm:hidden"
+        className="divide-y divide-[var(--border)] sm:hidden"
       >
         {rows.map((row, i) => (
           <motion.li
@@ -28,7 +29,15 @@ export function RankTable({
               #{i + 1}
             </span>
             <span className="min-w-0 flex-1 truncate">
-              <span className="mr-1.5 text-xl">{row.participant.emoji}</span>
+              <span className="mr-1.5 inline-flex align-middle">
+                <PlayerAvatar
+                  avatar={row.participant.emoji}
+                  name={row.participant.name}
+                  size="sm"
+                  rounded="rounded-lg"
+                  color={row.participant.color}
+                />
+              </span>
               <span className="font-semibold">{row.participant.name}</span>
             </span>
             <div className="shrink-0 text-right">
@@ -52,7 +61,7 @@ export function RankTable({
 
       {/* Desktop: table */}
       <table className="hidden w-full text-left sm:table">
-        <thead className="bg-white/5 text-sm uppercase tracking-wide text-[var(--fg-muted)]">
+        <thead className="bg-tone-5 text-sm uppercase tracking-wide text-[var(--fg-muted)]">
           <tr>
             <th className="px-4 py-3">Rank</th>
             <th className="px-4 py-3">Competitor</th>
@@ -65,14 +74,22 @@ export function RankTable({
             <motion.tr
               key={row.participant.id}
               variants={staggerItem}
-              className="border-t border-white/5 transition hover:bg-white/[0.04]"
+              className="border-t border-[var(--border)] transition hover:bg-tone-4"
             >
               <td className="px-4 py-3 font-display font-bold text-[var(--fg-muted)]">
                 #{i + 1}
               </td>
               <td className="px-4 py-3">
-                <span className="mr-2 text-xl">{row.participant.emoji}</span>
-                <span className="font-semibold">{row.participant.name}</span>
+                <span className="inline-flex items-center gap-2">
+                  <PlayerAvatar
+                    avatar={row.participant.emoji}
+                    name={row.participant.name}
+                    size="sm"
+                    rounded="rounded-lg"
+                    color={row.participant.color}
+                  />
+                  <span className="font-semibold">{row.participant.name}</span>
+                </span>
               </td>
               <td className="px-4 py-3 text-right">
                 {row.lastDelta > 0 ? (

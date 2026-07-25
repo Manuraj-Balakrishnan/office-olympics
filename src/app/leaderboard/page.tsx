@@ -9,6 +9,7 @@ import { Download, RotateCcw, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { Podium } from "@/components/leaderboard/Podium";
 import { RankTable } from "@/components/leaderboard/RankTable";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { useTournamentStore } from "@/store/useTournamentStore";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useSound } from "@/hooks/useSound";
@@ -72,8 +73,14 @@ export default function LeaderboardPage() {
           <h1 className="mt-4 font-display text-4xl font-extrabold sm:text-5xl md:text-6xl">
             <span className="text-gradient">Champions!</span>
           </h1>
-          <p className="mt-3 text-lg sm:text-2xl">
-            <span className="text-3xl sm:text-4xl">{winner.participant.emoji}</span>{" "}
+          <p className="mt-3 flex flex-wrap items-center justify-center gap-2 text-lg sm:text-2xl">
+            <PlayerAvatar
+              avatar={winner.participant.emoji}
+              name={winner.participant.name}
+              size="lg"
+              rounded="rounded-xl"
+              color={winner.participant.color}
+            />
             <span
               className="font-display font-bold"
               style={{ color: winner.participant.color }}

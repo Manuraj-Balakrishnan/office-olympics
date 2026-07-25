@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useTournamentStore } from "@/store/useTournamentStore";
 import { ProgressBar } from "@/components/layout/ProgressBar";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 export function MiniLeaderboard({ collapsible = true }: { collapsible?: boolean }) {
   const board = useLeaderboard();
@@ -28,12 +29,18 @@ export function MiniLeaderboard({ collapsible = true }: { collapsible?: boolean 
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2"
+              className="flex items-center gap-3 rounded-xl bg-tone-5 px-3 py-2"
             >
               <span className="w-6 font-display text-sm font-bold text-[var(--fg-muted)]">
                 {i + 1}
               </span>
-              <span className="text-xl">{row.participant.emoji}</span>
+              <PlayerAvatar
+                avatar={row.participant.emoji}
+                name={row.participant.name}
+                size="sm"
+                rounded="rounded-lg"
+                color={row.participant.color}
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{row.participant.name}</p>
                 {row.lastDelta > 0 && (

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { PlayerOrTeam } from "@/types/tournament";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 const PODIUM = [
   { place: 2, height: "h-24 sm:h-28 md:h-36", gradient: "from-slate-300 to-slate-500", label: "Silver" },
@@ -31,7 +32,7 @@ export function Podium({
           return (
             <div
               key={slot.place}
-              className={`w-[4.5rem] sm:w-24 md:w-36 ${slot.height} rounded-t-2xl bg-white/5`}
+              className={`w-[4.5rem] sm:w-24 md:w-36 ${slot.height} rounded-t-2xl bg-tone-5`}
             />
           );
         }
@@ -48,7 +49,14 @@ export function Podium({
               transition={{ type: "spring", delay: 0.15 * i, stiffness: 200 }}
               className="mb-2 text-center sm:mb-3"
             >
-              <div className="text-3xl sm:text-4xl md:text-5xl">{row.participant.emoji}</div>
+              <PlayerAvatar
+                avatar={row.participant.emoji}
+                name={row.participant.name}
+                size="xl"
+                rounded="rounded-2xl"
+                className="mx-auto"
+                color={row.participant.color}
+              />
               <p className="mt-1 max-w-full truncate font-display text-xs font-bold sm:text-sm md:text-base">
                 {row.participant.name}
               </p>
@@ -59,8 +67,17 @@ export function Podium({
                 {row.total}
               </p>
               {isTeam && topPlayer && (
-                <p className="mt-0.5 max-w-full truncate text-[10px] leading-tight text-[var(--fg-muted)] sm:text-xs">
-                  Top {topPlayer.emoji} {topPlayer.name} · {topPlayer.total}
+                <p className="mt-0.5 flex max-w-full items-center justify-center gap-1 truncate text-[10px] leading-tight text-[var(--fg-muted)] sm:text-xs">
+                  <span>Top</span>
+                  <PlayerAvatar
+                    avatar={topPlayer.emoji}
+                    name={topPlayer.name}
+                    size="xs"
+                    rounded="rounded-md"
+                  />
+                  <span className="truncate">
+                    {topPlayer.name} · {topPlayer.total}
+                  </span>
                 </p>
               )}
             </motion.div>

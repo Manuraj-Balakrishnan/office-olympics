@@ -18,7 +18,7 @@ export function ProgressBar({
         <span>{label ?? `Game ${Math.min(current, total)} of ${total}`}</span>
         <span>{Math.round(pct)}%</span>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+      <div className="h-2.5 overflow-hidden rounded-full bg-tone-10">
         <motion.div
           className="h-full rounded-full gradient-primary"
           initial={false}

@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { CountdownIntro } from "./CountdownIntro";
 import { HowToPlayIntro } from "./HowToPlayIntro";
 import { TimerBar } from "@/components/layout/TimerBar";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { useTournamentStore } from "@/store/useTournamentStore";
 import type { GameId, PlayerOrTeam } from "@/types/tournament";
 import { useSound } from "@/hooks/useSound";
@@ -28,7 +29,9 @@ export function GameShell({
   title: string;
   durationSec: number;
   supportsHuddle?: boolean;
+  /** Hide top TimerBar. If also using onTimeUp, show remainingMs in the game UI. */
   hideTimer?: boolean;
+  /** Hard time limit — ends the round. Prefer showing the timer (or remainingMs in-game). */
   onTimeUp?: () => void;
   results?: React.ReactNode;
   children: (ctx: {
@@ -52,6 +55,9 @@ export function GameShell({
   const { play } = useSound();
   const onTimeUpRef = useRef(onTimeUp);
   onTimeUpRef.current = onTimeUp;
+  // Boolean keeps the effect deps array fixed-length and avoids restarting the
+  // timer when parents pass a new inline onTimeUp identity each render.
+  const hasHardTimeLimit = onTimeUp != null;
 
   const backHref = sessionPlay ? null : "/dashboard";
 
@@ -95,10 +101,14 @@ export function GameShell({
   }, [phase, huddleLeft]);
 
   useEffect(() => {
-    if (phase !== "playing" || hideTimer || results) return;
+    // Hard cutoff only when onTimeUp is provided — and only while playing.
+    // hideTimer hides the top bar; those games must show remainingMs themselves
+    // (e.g. Speed Puzzle). Games without onTimeUp use elapsed time for score only.
+    if (phase !== "playing" || results || !hasHardTimeLimit) return;
     timedOut.current = false;
     const started = Date.now();
     const total = durationSec * 1000;
+    setRemainingMs(total);
     const id = setInterval(() => {
       const left = Math.max(0, total - (Date.now() - started));
       setRemainingMs(left);
@@ -110,43 +120,53 @@ export function GameShell({
       }
     }, 100);
     return () => clearInterval(id);
-  }, [phase, durationSec, hideTimer, results, play]);
+  }, [phase, durationSec, results, play, hasHardTimeLimit]);
 
   const activeParticipant = participants[0] ?? null;
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:py-4"
+        className="mx-auto flex w-full max-w-6xl shrink-0 flex-col gap-2 px-3 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:px-4 sm:py-3"
       >
         <div className="flex items-center justify-between gap-3 sm:contents">
           {backHref ? (
-            <Link href={backHref} className="btn-secondary !py-2 text-sm">
+            <Link href={backHref} className="btn-secondary !min-h-9 !px-3 !py-1.5 text-sm">
               <ArrowLeft className="h-4 w-4" /> Back
             </Link>
           ) : (
             <div className="hidden w-24 sm:block" aria-hidden />
           )}
           {activeParticipant && phase === "playing" ? (
-            <div className="flex max-w-[50%] items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2 text-sm backdrop-blur sm:order-last sm:max-w-none">
-              <span className="shrink-0">{activeParticipant.emoji}</span>
+            <div className="flex max-w-[45%] items-center gap-1.5 rounded-xl bg-tone-5 px-2.5 py-1.5 text-sm backdrop-blur sm:order-last sm:max-w-none sm:px-3 sm:py-2">
+              <PlayerAvatar
+                avatar={activeParticipant.emoji}
+                name={activeParticipant.name}
+                size="xs"
+                rounded="rounded-md"
+                color={activeParticipant.color}
+              />
               <span className="truncate">{activeParticipant.name}</span>
             </div>
           ) : (
             <div className="hidden w-24 sm:block" />
           )}
         </div>
-        <h1 className="text-center font-display text-xl font-extrabold sm:text-2xl md:text-3xl">
-          {title}
+        <h1 className="text-center font-display text-lg font-extrabold sm:text-2xl md:text-3xl">
+          {phase === "howto"
+            ? "How to play"
+            : phase === "results" || results
+              ? "Results"
+              : title}
         </h1>
       </motion.div>
 
       {phase === "playing" && !hideTimer && !results && (
-        <div className="mx-auto w-full max-w-6xl px-4 pb-2">
+        <div className="mx-auto w-full max-w-6xl shrink-0 px-3 pb-1.5 sm:px-4 sm:pb-2">
           <TimerBar remainingMs={remainingMs} totalMs={durationSec * 1000} />
-          <p className="mt-1 text-right text-sm tabular-nums text-[var(--fg-muted)]">
+          <p className="mt-1 text-right text-xs tabular-nums text-[var(--fg-muted)] sm:text-sm">
             {(remainingMs / 1000).toFixed(1)}s
           </p>
         </div>
@@ -214,7 +234,7 @@ export function GameShell({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            className="flex flex-1 flex-col"
+            className="flex min-h-0 flex-1 flex-col"
           >
             {results ? (
               results

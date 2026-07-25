@@ -1,77 +1,143 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Play } from "lucide-react";
 import { GameShell } from "../shared/GameShell";
 import { ResultsScreen, type ResultRow } from "../shared/ResultsScreen";
 import { useSound } from "@/hooks/useSound";
 import { useTournamentStore } from "@/store/useTournamentStore";
+import { springSnappy } from "@/lib/motion";
 
-const COLORS = [
-  { id: 0, bg: "bg-red-500", glow: "shadow-red-500/60" },
-  { id: 1, bg: "bg-blue-500", glow: "shadow-blue-500/60" },
-  { id: 2, bg: "bg-green-500", glow: "shadow-green-500/60" },
-  { id: 3, bg: "bg-yellow-400", glow: "shadow-yellow-400/60" },
+/** Classic Simon: green TL, red TR, yellow BL, blue BR. */
+const PADS = [
+  {
+    id: 0,
+    name: "Red",
+    label: "1",
+    idle: "bg-red-700/90",
+    lit: "bg-red-400 shadow-[0_0_32px_rgba(248,113,113,0.8)]",
+  },
+  {
+    id: 1,
+    name: "Blue",
+    label: "2",
+    idle: "bg-blue-700/90",
+    lit: "bg-blue-400 shadow-[0_0_32px_rgba(96,165,250,0.8)]",
+  },
+  {
+    id: 2,
+    name: "Yellow",
+    label: "3",
+    idle: "bg-amber-600/90",
+    lit: "bg-amber-300 shadow-[0_0_32px_rgba(252,211,77,0.8)]",
+  },
+  {
+    id: 3,
+    name: "Green",
+    label: "4",
+    idle: "bg-emerald-700/90",
+    lit: "bg-emerald-400 shadow-[0_0_32px_rgba(52,211,153,0.8)]",
+  },
 ] as const;
 
 type SfxSimon = "simon0" | "simon1" | "simon2" | "simon3";
+type Turn = "idle" | "watch" | "repeat" | "cleared" | "miss";
+
+/** Classic Simon: playback speeds up as the chain grows. */
+function timingFor(length: number) {
+  if (length <= 3) return { on: 460, gap: 160, lead: 520 };
+  if (length <= 6) return { on: 380, gap: 130, lead: 420 };
+  if (length <= 10) return { on: 300, gap: 100, lead: 360 };
+  if (length <= 14) return { on: 240, gap: 80, lead: 300 };
+  return { on: 190, gap: 60, lead: 260 };
+}
+
+function sleep(ms: number, gen: number, getGen: () => number) {
+  return new Promise<void>((resolve, reject) => {
+    window.setTimeout(() => {
+      if (getGen() !== gen) reject(new Error("cancelled"));
+      else resolve();
+    }, ms);
+  });
+}
 
 export function SimonPattern() {
   const { play } = useSound();
   const assistMode = useTournamentStore((s) => s.settings.assistMode);
+
   const [sequence, setSequence] = useState<number[]>([]);
   const [playerIdx, setPlayerIdx] = useState(0);
   const [lit, setLit] = useState<number | null>(null);
-  const [acceptInput, setAcceptInput] = useState(false);
+  const [turn, setTurn] = useState<Turn>("idle");
   const [score, setScore] = useState(0);
   const [results, setResults] = useState<ResultRow[] | null>(null);
-  const [status, setStatus] = useState("Watch the pattern…");
+  const [boardPulse, setBoardPulse] = useState<"ok" | "bad" | null>(null);
+
   const scoreRef = useRef(0);
   const finishRef = useRef<(() => void) | null>(null);
   const sequenceRef = useRef<number[]>([]);
+  const participantsRef = useRef<ResultRow["participant"][]>([]);
   const finalized = useRef(false);
-  const startedRef = useRef(false);
+  const genRef = useRef(0);
+  const playerFlashTimer = useRef<number | null>(null);
+  const advanceTimer = useRef<number | null>(null);
+
+  const getGen = useCallback(() => genRef.current, []);
 
   const flashPad = useCallback(
-    async (id: number) => {
+    async (id: number, onMs: number, gapMs: number, gen: number) => {
       setLit(id);
       play(`simon${id}` as SfxSimon);
-      await new Promise((r) => setTimeout(r, 420));
+      await sleep(onMs, gen, getGen);
       setLit(null);
-      await new Promise((r) => setTimeout(r, 140));
+      await sleep(gapMs, gen, getGen);
     },
-    [play],
+    [getGen, play],
   );
 
   const playSequence = useCallback(
     async (seq: number[]) => {
+      const gen = ++genRef.current;
       sequenceRef.current = seq;
       setSequence(seq);
-      setAcceptInput(false);
-      setStatus("Watch the pattern…");
-      await new Promise((r) => setTimeout(r, 400));
-      for (const id of seq) {
-        await flashPad(id);
-      }
-      setAcceptInput(true);
-      setStatus("Your turn — repeat it!");
       setPlayerIdx(0);
+      setTurn("watch");
+      setLit(null);
+
+      const { on, gap, lead } = timingFor(seq.length);
+
+      try {
+        await sleep(lead, gen, getGen);
+        for (const padId of seq) {
+          await flashPad(padId, on, gap, gen);
+        }
+        if (genRef.current !== gen) return;
+        setTurn("repeat");
+      } catch {
+        /* superseded by newer playback or game over */
+      }
     },
-    [flashPad],
+    [flashPad, getGen],
   );
 
   const endGame = useCallback(
-    (finalScore: number, participants: ResultRow["participant"][]) => {
+    (finalScore: number) => {
       if (finalized.current) return;
       finalized.current = true;
+      genRef.current += 1;
+      if (playerFlashTimer.current) window.clearTimeout(playerFlashTimer.current);
+      if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+      setTurn("miss");
+      setLit(null);
       play("wrong");
-      setAcceptInput(false);
-      setStatus(`Game over! Longest sequence: ${finalScore}`);
+      setBoardPulse("bad");
+      window.setTimeout(() => setBoardPulse(null), 520);
       setResults(
-        participants.map((p) => ({
+        participantsRef.current.map((p) => ({
           participant: p,
           score: finalScore,
-          detail: `${finalScore} steps`,
+          detail: `${finalScore} step${finalScore === 1 ? "" : "s"}`,
         })),
       );
       finishRef.current?.();
@@ -79,30 +145,77 @@ export function SimonPattern() {
     [play],
   );
 
-  const onPad = (id: number, participants: ResultRow["participant"][]) => {
-    if (!acceptInput || finalized.current) return;
-    void flashPad(id);
+  const tapPad = (id: number) => {
+    if (turn !== "repeat" || finalized.current) return;
+
+    if (playerFlashTimer.current) window.clearTimeout(playerFlashTimer.current);
+    setLit(id);
+    play(`simon${id}` as SfxSimon);
+    playerFlashTimer.current = window.setTimeout(() => {
+      setLit(null);
+      playerFlashTimer.current = null;
+    }, 160);
+
     const seq = sequenceRef.current;
     if (seq[playerIdx] !== id) {
-      endGame(scoreRef.current, participants);
+      endGame(scoreRef.current);
       return;
     }
-    play("correct");
+
     const nextIdx = playerIdx + 1;
     if (nextIdx >= seq.length) {
       const newScore = seq.length;
       scoreRef.current = newScore;
       setScore(newScore);
-      setAcceptInput(false);
-      setStatus(`Nice! Sequence length ${newScore}`);
-      setTimeout(() => {
+      setPlayerIdx(nextIdx);
+      setTurn("cleared");
+      play(newScore >= 10 ? "fanfare" : newScore >= 5 ? "complete" : "correct");
+      setBoardPulse("ok");
+      window.setTimeout(() => setBoardPulse(null), 420);
+
+      const delay = newScore >= 10 ? 900 : 700;
+      advanceTimer.current = window.setTimeout(() => {
+        advanceTimer.current = null;
+        if (finalized.current) return;
         const next = [...seq, Math.floor(Math.random() * 4)];
         void playSequence(next);
-      }, 700);
+      }, delay);
     } else {
       setPlayerIdx(nextIdx);
     }
   };
+
+  const startGame = () => {
+    if (turn !== "idle" || finalized.current) return;
+    play("go");
+    const first = [Math.floor(Math.random() * 4)];
+    void playSequence(first);
+  };
+
+  useEffect(() => {
+    return () => {
+      genRef.current += 1;
+      if (playerFlashTimer.current) window.clearTimeout(playerFlashTimer.current);
+      if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    };
+  }, []);
+
+  const status =
+    turn === "idle"
+      ? "Hit Play when you're ready"
+      : turn === "watch"
+        ? "Watch the pattern…"
+        : turn === "repeat"
+          ? "Your turn — repeat it!"
+          : turn === "cleared"
+            ? score >= 10
+              ? `Elite! ${score} steps`
+              : score >= 5
+                ? `Nice chain — ${score}!`
+                : `Cleared ${score} — next up…`
+            : "Missed!";
+
+  const progress = sequence.length > 0 ? Math.min(playerIdx, sequence.length) : 0;
 
   return (
     <GameShell
@@ -117,51 +230,177 @@ export function SimonPattern() {
         ) : undefined
       }
     >
-      {({ participants, phase, finish }) => {
+      {({ participants, phase: shellPhase, finish }) => {
         finishRef.current = finish;
-        if (results || phase !== "playing") return null;
+        participantsRef.current = participants;
 
-        if (!startedRef.current) {
-          startedRef.current = true;
-          queueMicrotask(() => {
-            const first = [Math.floor(Math.random() * 4)];
-            void playSequence(first);
-          });
-        }
+        if (results || shellPhase !== "playing") return null;
 
         return (
-          <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-6 px-4 py-6 sm:gap-8">
-            <p className="text-center text-base text-[var(--fg-muted)] sm:text-lg">{status}</p>
-            <p className="font-display text-2xl font-bold sm:text-3xl">Score: {score}</p>
-
-            <div className="mx-auto grid w-full max-w-[min(100%,20rem)] grid-cols-2 gap-3 sm:max-w-none sm:w-auto sm:gap-4">
-              {COLORS.map((c) => (
-                <motion.button
-                  key={c.id}
-                  type="button"
-                  whileTap={{ scale: 0.92 }}
-                  onClick={() => onPad(c.id, participants)}
-                  className={`aspect-square w-full rounded-3xl sm:h-36 sm:w-36 md:h-40 md:w-40 ${c.bg} shadow-2xl transition ${
-                    lit === c.id ? `scale-105 brightness-125 shadow-xl ${c.glow}` : "opacity-85"
-                  }`}
-                  aria-label={assistMode ? `Pad ${c.id + 1}` : `Color pad ${c.id + 1}`}
+          <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-5 px-4 py-4 sm:gap-6 sm:py-6">
+            <div className="flex w-full items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--fg-muted)]">
+                  Longest chain
+                </p>
+                <p className="font-display text-3xl font-extrabold leading-none tabular-nums sm:text-4xl">
+                  {score}
+                </p>
+              </div>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={status}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="max-w-[14rem] pb-0.5 text-right text-sm leading-none text-[var(--fg-muted)] sm:text-base"
                 >
-                  {assistMode && (
-                    <span className="font-display text-2xl font-bold text-black/50">
-                      {c.id + 1}
-                    </span>
-                  )}
-                </motion.button>
-              ))}
+                  {status}
+                </motion.p>
+              </AnimatePresence>
             </div>
 
-            <button
-              type="button"
-              className="btn-secondary text-sm"
-              onClick={() => endGame(scoreRef.current, participants)}
+            <div className="flex min-h-[2.25rem] flex-col items-center justify-center gap-2">
+              {turn !== "idle" && (
+                <>
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                    {sequence.map((_, i) => (
+                      <motion.span
+                        key={`${sequence.length}-${i}`}
+                        initial={{ scale: 0.6, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ ...springSnappy, delay: i * 0.02 }}
+                        className={`h-2 w-2 rounded-full transition ${
+                          i < progress
+                            ? "bg-[var(--ring)]"
+                            : turn === "repeat" && i === progress
+                              ? "bg-white/70 ring-2 ring-[var(--ring)]/50"
+                              : "bg-white/20"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {sequence.length > 0 && (
+                    <p className="text-xs tabular-nums text-[var(--fg-muted)]">
+                      {turn === "repeat" || turn === "cleared"
+                        ? `${progress} / ${sequence.length}`
+                        : `${sequence.length} step${sequence.length === 1 ? "" : "s"}`}
+                      {sequence.length >= 7 && turn === "watch" ? " · speeding up" : ""}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            <motion.div
+              animate={
+                boardPulse === "bad"
+                  ? { x: [0, -10, 10, -8, 8, -4, 0] }
+                  : boardPulse === "ok"
+                    ? { scale: [1, 1.04, 1] }
+                    : { x: 0, scale: 1 }
+              }
+              transition={{ duration: boardPulse === "bad" ? 0.45 : 0.35 }}
+              className="relative aspect-square w-full max-w-[min(100%,20rem)] sm:max-w-[22rem]"
             >
-              End & save score
-            </button>
+              <div
+                className={`absolute inset-0 rounded-full bg-[#0c1018] shadow-[inset_0_0_0_10px_#151b27,0_18px_40px_rgba(0,0,0,0.45)] transition ${
+                  boardPulse === "ok"
+                    ? "ring-4 ring-[var(--ring)]/70"
+                    : boardPulse === "bad"
+                      ? "ring-4 ring-red-500/70"
+                      : ""
+                }`}
+              />
+
+              {/* Four quarter pads with a thin cross gap */}
+              <div className="absolute inset-[8%] overflow-hidden rounded-full">
+                <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-1.5 bg-[#0c1018]">
+                  {/* Remap visual order: TL green, TR red, BL yellow, BR blue */}
+                  {[PADS[3], PADS[0], PADS[2], PADS[1]].map((pad) => {
+                    const isLit = lit === pad.id;
+                    const canTap = turn === "repeat";
+                    return (
+                      <button
+                        key={pad.id}
+                        type="button"
+                        disabled={!canTap}
+                        onClick={() => tapPad(pad.id)}
+                        aria-label={assistMode ? `Pad ${pad.label} · ${pad.name}` : pad.name}
+                        className={`relative transition-[filter,background-color,box-shadow,transform] duration-100 ${
+                          pad.id === 3
+                            ? "rounded-tl-[100%]"
+                            : pad.id === 0
+                              ? "rounded-tr-[100%]"
+                              : pad.id === 2
+                                ? "rounded-bl-[100%]"
+                                : "rounded-br-[100%]"
+                        } ${isLit ? pad.lit : pad.idle} ${
+                          canTap ? "cursor-pointer active:brightness-125" : "cursor-default"
+                        } ${
+                          (turn === "watch" || turn === "idle") && !isLit
+                            ? "brightness-[0.7]"
+                            : ""
+                        } ${turn === "repeat" && !isLit ? "hover:brightness-110" : ""}`}
+                      >
+                        {assistMode && turn !== "idle" && (
+                          <span className="pointer-events-none absolute inset-0 flex items-center justify-center font-display text-2xl font-extrabold text-black/40">
+                            {pad.label}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="absolute inset-[32%] z-10 flex items-center justify-center rounded-full bg-[#121821] shadow-[inset_0_2px_8px_rgba(255,255,255,0.06),0_0_0_6px_#0c1018]">
+                {turn === "idle" ? (
+                  <motion.button
+                    type="button"
+                    onClick={startGame}
+                    whileHover={{ scale: 1.06 }}
+                    whileTap={{ scale: 0.94 }}
+                    className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-full bg-[#0a0c10] text-white shadow-[inset_0_2px_8px_rgba(255,255,255,0.08)]"
+                    aria-label="Play"
+                  >
+                    <Play className="h-8 w-8 fill-current sm:h-9 sm:w-9" strokeWidth={0} />
+                    <span className="font-display text-xs font-extrabold uppercase tracking-[0.18em]">
+                      Play
+                    </span>
+                  </motion.button>
+                ) : (
+                  <div className="pointer-events-none flex flex-col items-center justify-center">
+                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-[var(--fg-muted)]">
+                      {turn === "watch"
+                        ? "Watch"
+                        : turn === "repeat"
+                          ? "Go"
+                          : turn === "cleared"
+                            ? "Yes"
+                            : "Out"}
+                    </span>
+                    <span className="font-display text-2xl font-extrabold tabular-nums sm:text-3xl">
+                      {sequence.length || "—"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
+            <p className="max-w-xs text-center text-xs leading-relaxed text-[var(--fg-muted)] sm:text-sm">
+              One miss ends the run. Playback gets faster as your chain grows — stay sharp.
+            </p>
+
+            {turn !== "idle" && (
+              <button
+                type="button"
+                className="btn-secondary text-sm"
+                onClick={() => endGame(scoreRef.current)}
+              >
+                End & save score
+              </button>
+            )}
           </div>
         );
       }}

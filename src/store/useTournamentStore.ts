@@ -2,7 +2,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
 const uuid = () => uuidv4();
-import { GAMES, TEAM_COLORS, TEAM_EMOJIS, migrateGameId, sanitizeGameIds } from "@/data/games";
+import {
+  GAMES,
+  TEAM_COLORS,
+  migrateGameId,
+  sanitizeGameIds,
+  sanitizeGameOrder,
+} from "@/data/games";
+import { nextPlayerAvatar, isPlayerAvatarId } from "@/data/playerAvatars";
+import { nextTeamEmblem, isTeamEmblemId, getTeamEmblem } from "@/data/teamEmblems";
 import type {
   GameId,
   GameScoreEntry,
@@ -37,7 +45,7 @@ interface TournamentState {
   setTheme: (theme: ThemeMode) => void;
   updateSettings: (partial: Partial<TournamentSettings>) => void;
 
-  addPlayer: (name: string, teamId?: string) => void;
+  addPlayer: (name: string, teamId?: string, emoji?: string) => void;
   removePlayer: (id: string) => void;
   reorderPlayers: (from: number, to: number) => void;
   assignPlayerTeam: (playerId: string, teamId: string | undefined) => void;
@@ -97,13 +105,21 @@ export const useTournamentStore = create<TournamentState>()(
       updateSettings: (partial) =>
         set((s) => ({ settings: { ...s.settings, ...partial } })),
 
-      addPlayer: (name, teamId) => {
+      addPlayer: (name, teamId, emoji) => {
         const trimmed = name.trim();
         if (!trimmed) return;
         set((s) => ({
           players: [
             ...s.players,
-            { id: uuid(), name: trimmed, teamId, emoji: "🙋" },
+            {
+              id: uuid(),
+              name: trimmed,
+              teamId,
+              emoji:
+                emoji && isPlayerAvatarId(emoji.trim())
+                  ? emoji.trim()
+                  : nextPlayerAvatar(s.players.map((p) => p.emoji)),
+            },
           ],
         }));
       },
@@ -130,7 +146,13 @@ export const useTournamentStore = create<TournamentState>()(
         const trimmed = name.trim();
         if (!trimmed) return;
         set((s) => {
-          const color = TEAM_COLORS[s.teams.length % TEAM_COLORS.length];
+          const emblem =
+            emoji && isTeamEmblemId(emoji)
+              ? emoji
+              : nextTeamEmblem(s.teams.map((t) => t.emoji));
+          const color =
+            (getTeamEmblem(emblem)?.color ?? null) ??
+            TEAM_COLORS[s.teams.length % TEAM_COLORS.length]!;
           return {
             teams: [
               ...s.teams,
@@ -138,7 +160,7 @@ export const useTournamentStore = create<TournamentState>()(
                 id: uuid(),
                 name: trimmed,
                 color,
-                emoji: emoji || TEAM_EMOJIS[s.teams.length % TEAM_EMOJIS.length],
+                emoji: emblem,
               },
             ],
           };
@@ -205,7 +227,7 @@ export const useTournamentStore = create<TournamentState>()(
           return teams.map((t) => ({
             id: t.id,
             name: t.name,
-            color: t.color,
+            color: (getTeamEmblem(t.emoji)?.color ?? null) ?? t.color,
             emoji: t.emoji,
             kind: "team" as const,
             memberIds: players.filter((p) => p.teamId === t.id).map((p) => p.id),
@@ -215,7 +237,7 @@ export const useTournamentStore = create<TournamentState>()(
           id: p.id,
           name: p.name,
           color: TEAM_COLORS[i % TEAM_COLORS.length],
-          emoji: p.emoji ?? "🙋",
+          emoji: p.emoji ?? "",
           kind: "player" as const,
         }));
       },
@@ -246,7 +268,7 @@ export const useTournamentStore = create<TournamentState>()(
                   return {
                     id: player.id,
                     name: player.name,
-                    emoji: player.emoji ?? "🙋",
+                    emoji: player.emoji ?? "",
                     total: memberTotal,
                   };
                 })
@@ -305,8 +327,7 @@ export const useTournamentStore = create<TournamentState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.gameOrder = sanitizeGameIds(state.gameOrder as string[]);
-          state.playedGames = sanitizeGameIds(state.playedGames as string[]);
+          state.gameOrder = sanitizeGameOrder(state.gameOrder as string[]);
           state.scores = state.scores
             .map((s) => {
               const gameId = migrateGameId(s.gameId);
@@ -319,8 +340,20 @@ export const useTournamentStore = create<TournamentState>()(
               return gameId ? { ...s, gameId } : null;
             })
             .filter((s): s is NonNullable<typeof s> => s != null);
+          // Empty played list must stay empty; also drop ids that have no scores
+          // (repairs older builds that expanded [] → all game ids).
+          const scoredGames = new Set(state.scores.map((s) => s.gameId));
+          state.playedGames = sanitizeGameIds(state.playedGames as string[]).filter(
+            (id) => scoredGames.has(id),
+          );
           if (state.currentGameIndex >= state.gameOrder.length) {
             state.currentGameIndex = Math.max(0, state.gameOrder.length - 1);
+          }
+          if (
+            state.tournamentFinished &&
+            state.playedGames.length < state.gameOrder.length
+          ) {
+            state.tournamentFinished = false;
           }
         }
         state?.setHydrated(true);

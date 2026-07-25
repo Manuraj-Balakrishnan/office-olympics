@@ -19,8 +19,9 @@ import {
   skipTurn,
   startSession,
   submitScore,
+  updateSessionSettings,
 } from "@/lib/sessionStore";
-import type { GameId, TournamentSession } from "@/types/tournament";
+import type { GameId, TournamentSession, TournamentSettings } from "@/types/tournament";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -77,6 +78,13 @@ export async function PATCH(request: Request, ctx: Ctx) {
         break;
       case "shuffle":
         session = await shuffleGames(id, hostToken);
+        break;
+      case "update-settings":
+        session = await updateSessionSettings(
+          id,
+          hostToken,
+          (body.settings ?? body) as Partial<TournamentSettings>,
+        );
         break;
       case "add-team": {
         const s = await getSession(id);

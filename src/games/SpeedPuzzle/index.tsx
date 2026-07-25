@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from "react";
 import { motion } from "framer-motion";
 import { GameShell } from "../shared/GameShell";
@@ -16,22 +17,45 @@ import { useSound } from "@/hooks/useSound";
 const GRID = 3;
 const PIECE_COUNT = GRID * GRID;
 const DURATION_SEC = 90;
-const TIMEOUT_MS = DURATION_SEC * 1000 + 30_000;
 const CELL = 100;
 /** Max tab protrusion — must cover classic knob height (~20% of cell) */
 const TAB = 24;
 const SNAP_RATIO = 0.45;
+/** Pause on the completed puzzle before results */
+const REVEAL_MS = 2800;
 
 type Edge = -1 | 0 | 1;
 type PieceEdges = { top: Edge; right: Edge; bottom: Edge; left: Edge };
 
 type LoosePiece = {
   id: number;
-  /** Center position as % of the playfield */
-  x: number;
-  y: number;
   rot: number;
 };
+
+function shuffleLoose(): LoosePiece[] {
+  return Array.from({ length: PIECE_COUNT }, (_, i) => i)
+    .sort(() => Math.random() - 0.5)
+    .map((id) => ({
+      id,
+      rot: Math.random() * 36 - 18,
+    }));
+}
+
+function formatTime(ms: number) {
+  const s = Math.floor(ms / 1000);
+  const rem = Math.floor((ms % 1000) / 10);
+  return `${s}.${rem.toString().padStart(2, "0")}s`;
+}
+
+/** Faster solve → more points (0–1000). Incomplete → small partial credit. */
+function puzzlePoints(ms: number, cleared: boolean, placedCount: number) {
+  if (!cleared) {
+    return Math.round((placedCount / PIECE_COUNT) * 150);
+  }
+  // Elite ~20s → 1000; 45s → ~640; 90s → 0
+  const t = Math.max(12_000, ms);
+  return Math.max(0, Math.min(1000, Math.round(1000 - (t - 20_000) / 70)));
+}
 
 const PUZZLE_SVG = encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none">
@@ -192,46 +216,11 @@ function jigsawPath(e: PieceEdges): string {
   ].join(" ");
 }
 
-function scatterLoose(): LoosePiece[] {
-  const ids = Array.from({ length: PIECE_COUNT }, (_, i) => i).sort(
-    () => Math.random() - 0.5,
-  );
-  return ids.map((id, i) => {
-    const col = i % 3;
-    const row = Math.floor(i / 3);
-    return {
-      id,
-      x: 18 + col * 32 + (Math.random() * 10 - 5),
-      y: 72 + row * 8 + (Math.random() * 3 - 1.5),
-      rot: Math.random() * 56 - 28,
-    };
-  });
-}
-
-function clampLoosePct(x: number, y: number, pieceSizePct: number, trayOnly = false) {
-  const half = Math.max(pieceSizePct / 2, 8);
-  const minX = half;
-  const maxX = 100 - half;
-  const minY = trayOnly ? 58 : half;
-  const maxY = 100 - half * 0.55;
-  return {
-    x: Math.min(maxX, Math.max(minX, x)),
-    y: Math.min(maxY, Math.max(minY, y)),
-  };
-}
-
-function formatTime(ms: number) {
-  const s = Math.floor(ms / 1000);
-  const rem = Math.floor((ms % 1000) / 10);
-  return `${s}.${rem.toString().padStart(2, "0")}s`;
-}
-
 function PieceArt({
   pieceId,
   edges,
   uid,
   ghost,
-  placed,
 }: {
   pieceId: number;
   edges: PieceEdges;
@@ -243,12 +232,16 @@ function PieceArt({
   const col = pieceId % GRID;
   const path = jigsawPath(edges);
   const clipId = `${uid}-${ghost ? "g" : "p"}-${pieceId}`;
-  const pad = TAB + 2;
+  const pad = TAB;
   const vb = `${-pad} ${-pad} ${CELL + pad * 2} ${CELL + pad * 2}`;
 
   if (ghost) {
     return (
-      <svg viewBox={vb} className="h-full w-full overflow-visible" aria-hidden>
+      <svg
+        viewBox={vb}
+        className="pointer-events-none h-full w-full overflow-visible"
+        aria-hidden
+      >
         <path
           d={path}
           fill="rgba(255,255,255,0.04)"
@@ -262,32 +255,17 @@ function PieceArt({
   }
 
   return (
-    <svg viewBox={vb} className="h-full w-full overflow-visible" aria-hidden>
+    <svg
+      viewBox={vb}
+      className="pointer-events-none h-full w-full overflow-visible"
+      aria-hidden
+    >
       <defs>
         <clipPath id={clipId}>
           <path d={path} />
         </clipPath>
-        <linearGradient id={`${clipId}-sheen`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.38)" />
-          <stop offset="35%" stopColor="rgba(255,255,255,0)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0.18)" />
-        </linearGradient>
-        <filter id={`${clipId}-grain`} x="-5%" y="-5%" width="110%" height="110%">
-          <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" result="n" seed={pieceId + 1} />
-          <feColorMatrix
-            in="n"
-            type="matrix"
-            values="0 0 0 0 0.95  0 0 0 0 0.93  0 0 0 0 0.9  0 0 0 0.06 0"
-          />
-          <feBlend in="SourceGraphic" mode="multiply" />
-        </filter>
       </defs>
-
-      {/* Cardboard thickness stack */}
-      <path d={path} fill="#5c5346" transform="translate(3.2 4)" opacity={0.55} />
-      <path d={path} fill="#8a7f6e" transform="translate(1.6 2)" opacity={0.7} />
-
-      <g clipPath={`url(#${clipId})`} filter={`url(#${clipId}-grain)`}>
+      <g clipPath={`url(#${clipId})`}>
         <image
           href={PUZZLE_HREF}
           x={-col * CELL}
@@ -295,31 +273,14 @@ function PieceArt({
           width={GRID * CELL}
           height={GRID * CELL}
           preserveAspectRatio="none"
+          style={{ pointerEvents: "none", WebkitUserDrag: "none" } as CSSProperties}
         />
-        <path d={path} fill={`url(#${clipId}-sheen)`} />
       </g>
-
-      {/* Die-cut rim + cut edge */}
-      <path
-        d={path}
-        fill="none"
-        stroke="rgba(255,252,245,0.85)"
-        strokeWidth={3.4}
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-      <path
-        d={path}
-        fill="none"
-        stroke={placed ? "rgba(16,185,129,0.55)" : "rgba(40,32,24,0.55)"}
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
     </svg>
   );
 }
 
+/** Ghost slot guides — sized so jigsaw tabs sit in the right place on the board. */
 function slotBoxStyle(slot: number) {
   const r = Math.floor(slot / GRID);
   const c = slot % GRID;
@@ -334,18 +295,91 @@ function slotBoxStyle(slot: number) {
   } as const;
 }
 
+/** One seamless image masked by all placed jigsaw outlines — no per-piece seams. */
+function PlacedPuzzleLayer({
+  placed,
+  edgeMap,
+  uid,
+}: {
+  placed: Set<number>;
+  edgeMap: PieceEdges[];
+  uid: string;
+}) {
+  if (placed.size === 0) return null;
+  const board = GRID * CELL;
+  const pad = TAB;
+  const maskId = `${uid}-placed-mask`;
+  const ids = Array.from(placed);
+  // ViewBox includes tab padding; expand the SVG so coords 0..board map to the board box
+  const bleedPct = (pad / board) * 100;
+  const sizePct = ((board + pad * 2) / board) * 100;
+
+  return (
+    <svg
+      viewBox={`${-pad} ${-pad} ${board + pad * 2} ${board + pad * 2}`}
+      className="pointer-events-none absolute overflow-visible"
+      style={{
+        left: `${-bleedPct}%`,
+        top: `${-bleedPct}%`,
+        width: `${sizePct}%`,
+        height: `${sizePct}%`,
+      }}
+      aria-hidden
+    >
+      <defs>
+        <mask id={maskId} maskUnits="userSpaceOnUse">
+          <rect
+            x={-pad}
+            y={-pad}
+            width={board + pad * 2}
+            height={board + pad * 2}
+            fill="black"
+          />
+          {ids.map((id) => {
+            const r = Math.floor(id / GRID);
+            const c = id % GRID;
+            return (
+              <path
+                key={id}
+                d={jigsawPath(edgeMap[id]!)}
+                fill="white"
+                stroke="white"
+                strokeWidth={2.5}
+                strokeLinejoin="round"
+                transform={`translate(${c * CELL} ${r * CELL})`}
+              />
+            );
+          })}
+        </mask>
+      </defs>
+      <image
+        href={PUZZLE_HREF}
+        x={0}
+        y={0}
+        width={board}
+        height={board}
+        preserveAspectRatio="none"
+        mask={`url(#${maskId})`}
+      />
+    </svg>
+  );
+}
+
 export function SpeedPuzzle() {
   const uid = useId().replace(/:/g, "");
   const { play } = useSound();
   const edgeMap = useMemo(() => buildEdgeMap(), []);
 
   const [placed, setPlaced] = useState<Set<number>>(() => new Set());
-  const [loose, setLoose] = useState<LoosePiece[]>(() => scatterLoose());
+  const [loose, setLoose] = useState<LoosePiece[]>(() => shuffleLoose());
   const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [dragPos, setDragPos] = useState({ x: 50, y: 50 });
   const [hoverSlot, setHoverSlot] = useState<number | null>(null);
-  const [pieceSizePct, setPieceSizePct] = useState(18);
+  const [pieceSizePct, setPieceSizePct] = useState(22);
+  const [boardPx, setBoardPx] = useState(280);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [revealing, setRevealing] = useState(false);
   const [results, setResults] = useState<ResultRow[] | null>(null);
 
   const playfieldRef = useRef<HTMLDivElement>(null);
@@ -353,29 +387,53 @@ export function SpeedPuzzle() {
   const participantsRef = useRef<ResultRow["participant"][]>([]);
   const finishRef = useRef<(() => void) | null>(null);
   const finalized = useRef(false);
+  const revealingRef = useRef(false);
+  const solveMsRef = useRef(0);
   const startedAt = useRef(0);
   const placedRef = useRef(placed);
-  const looseRef = useRef(loose);
+  const dragPosRef = useRef(dragPos);
   placedRef.current = placed;
-  looseRef.current = loose;
-  const dragOffset = useRef({ x: 0, y: 0 });
+  dragPosRef.current = dragPos;
+  revealingRef.current = revealing;
 
-  const measurePieceSize = useCallback(() => {
+  const measureLayout = useCallback(() => {
     const field = playfieldRef.current;
-    const board = boardInnerRef.current;
-    if (!field || !board) return;
+    if (!field) return;
     const fr = field.getBoundingClientRect();
-    const br = board.getBoundingClientRect();
-    const cell = br.width / GRID;
+    if (fr.width <= 0 || fr.height <= 0) return;
+
+    // Leave room for a 3×3 tray (~3 rows of ~72px + padding) on phones
+    const trayBudget = Math.min(260, Math.max(168, fr.height * 0.4));
+    const side = Math.round(
+      Math.max(150, Math.min(420, fr.width - 20, fr.height - trayBudget - 12)),
+    );
+    setBoardPx(side);
+
+    const board = boardInnerRef.current;
+    const br = board?.getBoundingClientRect();
+    const boardW = br && br.width > 0 ? br.width : side * 0.94;
+    const cell = boardW / GRID;
     const piecePx = cell * ((CELL + TAB * 2) / CELL);
-    setPieceSizePct((piecePx / fr.width) * 100);
+    setPieceSizePct(Math.min(28, Math.max(16, (piecePx / fr.width) * 100)));
   }, []);
 
   useEffect(() => {
-    measurePieceSize();
-    window.addEventListener("resize", measurePieceSize);
-    return () => window.removeEventListener("resize", measurePieceSize);
-  }, [measurePieceSize, playing]);
+    measureLayout();
+    window.addEventListener("resize", measureLayout);
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", measureLayout);
+    const field = playfieldRef.current;
+    const ro =
+      field && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => measureLayout())
+        : null;
+    if (field && ro) ro.observe(field);
+    return () => {
+      window.removeEventListener("resize", measureLayout);
+      vv?.removeEventListener("resize", measureLayout);
+      ro?.disconnect();
+    };
+  }, [measureLayout, playing]);
 
   const slotCenterPct = useCallback((slot: number) => {
     const field = playfieldRef.current;
@@ -400,24 +458,46 @@ export function SpeedPuzzle() {
     if (finalized.current) return;
     finalized.current = true;
     const n = placedRef.current.size;
+    const points = puzzlePoints(ms, cleared, n);
     setResults(
       participantsRef.current.map((p) => ({
         participant: p,
-        score: cleared ? Math.max(1, ms) : TIMEOUT_MS,
+        score: points,
         detail: cleared
-          ? `Solved in ${formatTime(ms)}`
-          : `${n}/${PIECE_COUNT} placed · time up`,
+          ? `${points} pts · solved in ${formatTime(ms)}`
+          : `${points} pts · ${n}/${PIECE_COUNT} placed`,
       })),
     );
     finishRef.current?.();
   };
 
   useEffect(() => {
-    if (!playing || results || finalized.current) return;
+    if (!playing || results || finalized.current || revealing) return;
     startedAt.current = Date.now();
     const id = setInterval(() => setElapsedMs(Date.now() - startedAt.current), 50);
     return () => clearInterval(id);
-  }, [playing, results]);
+  }, [playing, results, revealing]);
+
+  // After the last piece snaps, show the full puzzle briefly, then score
+  useEffect(() => {
+    if (!revealing || finalized.current) return;
+    play("fanfare");
+    const t = setTimeout(() => {
+      finalize(solveMsRef.current, true);
+    }, REVEAL_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealing]);
+
+  const beginReveal = (ms: number) => {
+    if (revealingRef.current || finalized.current) return;
+    revealingRef.current = true;
+    solveMsRef.current = ms;
+    setElapsedMs(ms);
+    setDraggingId(null);
+    setHoverSlot(null);
+    setRevealing(true);
+  };
 
   const clientToPct = (clientX: number, clientY: number) => {
     const field = playfieldRef.current;
@@ -430,31 +510,26 @@ export function SpeedPuzzle() {
   };
 
   const onPointerDown = (pieceId: number, e: React.PointerEvent) => {
-    if (finalized.current || !playing || placedRef.current.has(pieceId)) return;
-    const piece = looseRef.current.find((p) => p.id === pieceId);
-    if (!piece) return;
-
+    if (finalized.current || revealingRef.current || !playing || placedRef.current.has(pieceId))
+      return;
+    // Stop iOS Safari image-callout / native drag (shows white selection handles)
+    e.preventDefault();
+    e.stopPropagation();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     play("click");
     const pt = clientToPct(e.clientX, e.clientY);
-    dragOffset.current = { x: pt.x - piece.x, y: pt.y - piece.y };
+    dragPosRef.current = pt;
+    setDragPos(pt);
     setDraggingId(pieceId);
-    // Raise to end of list for z-order
-    setLoose((prev) => {
-      const rest = prev.filter((p) => p.id !== pieceId);
-      return [...rest, { ...piece, rot: 0 }];
-    });
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (draggingId === null) return;
     const pt = clientToPct(e.clientX, e.clientY);
-    const rawX = pt.x - dragOffset.current.x;
-    const rawY = pt.y - dragOffset.current.y;
-    const { x, y } = clampLoosePct(rawX, rawY, pieceSizePct);
-    setLoose((prev) =>
-      prev.map((p) => (p.id === draggingId ? { ...p, x, y, rot: 0 } : p)),
-    );
+    const x = Math.min(94, Math.max(6, pt.x));
+    const y = Math.min(94, Math.max(6, pt.y));
+    dragPosRef.current = { x, y };
+    setDragPos({ x, y });
 
     const home = slotCenterPct(draggingId);
     if (home) {
@@ -465,13 +540,12 @@ export function SpeedPuzzle() {
   const onPointerUp = () => {
     if (draggingId === null) return;
     const id = draggingId;
-    const piece = looseRef.current.find((p) => p.id === id);
+    const pos = dragPosRef.current;
     setDraggingId(null);
     setHoverSlot(null);
-    if (!piece) return;
 
     const home = slotCenterPct(id);
-    if (home && Math.hypot(piece.x - home.x, piece.y - home.y) < home.snap) {
+    if (home && Math.hypot(pos.x - home.x, pos.y - home.y) < home.snap) {
       play("correct");
       const nextPlaced = new Set(placedRef.current);
       nextPlaced.add(id);
@@ -479,18 +553,15 @@ export function SpeedPuzzle() {
       setPlaced(nextPlaced);
       setLoose((prev) => prev.filter((p) => p.id !== id));
       if (nextPlaced.size >= PIECE_COUNT) {
-        const ms = Date.now() - startedAt.current;
-        setElapsedMs(ms);
-        finalize(ms, true);
+        beginReveal(Date.now() - startedAt.current);
       }
     } else {
       play("click");
-      const { x, y } = clampLoosePct(piece.x, piece.y, pieceSizePct, true);
-      setLoose((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, x, y } : p)),
-      );
     }
   };
+
+  const draggingPiece = draggingId != null ? loose.find((p) => p.id === draggingId) : null;
+  const showFullPuzzle = revealing || placed.size >= PIECE_COUNT;
 
   return (
     <GameShell
@@ -498,43 +569,61 @@ export function SpeedPuzzle() {
       title="Speed Puzzle"
       durationSec={DURATION_SEC}
       supportsHuddle
-      onTimeUp={() => finalize(Date.now() - startedAt.current, false)}
+      hideTimer
+      onTimeUp={() => {
+        if (revealingRef.current || finalized.current) return;
+        finalize(Date.now() - startedAt.current, false);
+      }}
       results={
         results ? (
           <ResultsScreen
             gameId="speed-puzzle"
             title="Speed Puzzle"
             results={results}
-            lowerIsBetter
           />
         ) : undefined
       }
     >
-      {({ participants, finish, phase }) => {
+      {({ participants, finish, phase, remainingMs }) => {
         participantsRef.current = participants;
         finishRef.current = finish;
         if (phase === "playing" && !playing && !results) {
           queueMicrotask(() => {
             setPlaying(true);
-            requestAnimationFrame(measurePieceSize);
+            requestAnimationFrame(() => {
+              measureLayout();
+              requestAnimationFrame(measureLayout);
+            });
           });
         }
         if (results) return null;
 
         return (
-          <div className="mx-auto flex w-full max-w-lg flex-col gap-3 px-3 py-3 sm:max-w-xl sm:px-4">
-            <div className="flex items-center justify-between text-sm text-[var(--fg-muted)]">
-              <span>
-                {placed.size}/{PIECE_COUNT} fitted
+          <div
+            className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col gap-1 px-2 pt-1 sm:max-w-xl sm:gap-2 sm:px-4 sm:pt-2"
+            style={{
+              paddingBottom: "max(0.5rem, calc(env(safe-area-inset-bottom, 0px) + 0.35rem))",
+            }}
+          >
+            <div className="flex shrink-0 items-center justify-between gap-2 px-1 text-sm text-[var(--fg-muted)]">
+              <span className="tabular-nums">
+                {placed.size}/{PIECE_COUNT}
               </span>
-              <span className="font-display text-lg font-bold tabular-nums text-[var(--fg)]">
-                {formatTime(elapsedMs)}
+              <span className="font-display text-base font-bold tabular-nums text-[var(--fg)] sm:text-lg">
+                {revealing ? "Complete!" : formatTime(elapsedMs)}
+              </span>
+              <span
+                className={`tabular-nums ${
+                  !revealing && remainingMs < 15_000 ? "font-semibold text-amber-300" : ""
+                }`}
+              >
+                {revealing ? "Nice work" : `${(remainingMs / 1000).toFixed(0)}s left`}
               </span>
             </div>
 
             <div
               ref={playfieldRef}
-              className="relative isolate overflow-hidden rounded-3xl select-none"
+              className="relative isolate flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-2xl select-none sm:rounded-3xl"
               style={{
                 background: `
                   radial-gradient(ellipse at 25% 15%, rgba(49,187,172,0.14), transparent 45%),
@@ -542,135 +631,171 @@ export function SpeedPuzzle() {
                   linear-gradient(165deg, #323c4a 0%, #1c232e 50%, #12171f 100%)
                 `,
                 boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
-                touchAction: draggingId !== null ? "none" : "pan-y",
-                minHeight: "min(620px, calc(100dvh - 11rem))",
+                touchAction: "none",
+                WebkitTouchCallout: "none",
+                WebkitUserSelect: "none",
+                userSelect: "none",
               }}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
+              onContextMenu={(e) => e.preventDefault()}
             >
-              {/* Wooden board */}
-              <div className="px-4 pt-4 sm:px-8 sm:pt-6">
+              {/* Board — JS-sized so it never collapses on mobile Safari */}
+              <div className="relative z-10 flex w-full shrink-0 flex-col items-center px-2 pt-1.5 sm:px-6 sm:pt-4">
                 <div
-                  className="relative mx-auto aspect-square w-full max-w-[min(340px,72vw)] rounded-2xl"
+                  className="relative rounded-2xl"
                   style={{
+                    width: boardPx,
+                    height: boardPx,
                     background:
                       "linear-gradient(145deg, #d2b48c 0%, #b8956c 42%, #8b6914 100%)",
                     boxShadow:
                       "inset 0 2px 3px rgba(255,255,255,0.35), inset 0 -4px 10px rgba(0,0,0,0.3), 0 10px 28px rgba(0,0,0,0.4)",
-                    padding: "5%",
+                    padding: "3%",
                   }}
                 >
                   <div
                     ref={boardInnerRef}
-                    className="relative h-full w-full overflow-visible rounded-md"
+                    className="relative h-full w-full overflow-hidden rounded-md"
                     style={{
                       background:
                         "radial-gradient(circle at 40% 30%, #3a4556, #1a2030 70%)",
                       boxShadow: "inset 0 3px 14px rgba(0,0,0,0.55)",
                     }}
                   >
-                    {Array.from({ length: PIECE_COUNT }).map((_, slot) => {
-                      const isPlaced = placed.has(slot);
-                      const glowing = hoverSlot === slot;
-                      return (
-                        <div
-                          key={slot}
-                          className="absolute"
-                          style={{
-                            ...slotBoxStyle(slot),
-                            zIndex: isPlaced ? 5 : 1,
-                            filter: glowing
-                              ? "drop-shadow(0 0 10px rgba(49,187,172,0.9))"
-                              : undefined,
-                          }}
-                        >
-                          {isPlaced ? (
-                            <motion.div
-                              initial={{ scale: 1.12, opacity: 0.7 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{ type: "spring", stiffness: 380, damping: 22 }}
-                              style={{
-                                filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.3))",
-                              }}
+                    {showFullPuzzle ? (
+                      <motion.img
+                        src={PUZZLE_HREF}
+                        alt="Completed puzzle"
+                        draggable={false}
+                        className="pointer-events-none absolute inset-0 h-full w-full rounded-md object-cover"
+                        style={{ WebkitUserDrag: "none" } as CSSProperties}
+                        initial={{ opacity: 0.7, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                      />
+                    ) : (
+                      <>
+                        {Array.from({ length: PIECE_COUNT }).map((_, slot) => {
+                          if (placed.has(slot)) return null;
+                          const glowing = hoverSlot === slot;
+                          return (
+                            <div
+                              key={slot}
+                              className="absolute z-[1]"
+                              style={slotBoxStyle(slot)}
                             >
-                              <PieceArt
-                                pieceId={slot}
-                                edges={edgeMap[slot]!}
-                                uid={uid}
-                                placed
-                              />
-                            </motion.div>
-                          ) : (
-                            <div style={{ opacity: glowing ? 1 : 0.9 }}>
-                              <PieceArt
-                                pieceId={slot}
-                                edges={edgeMap[slot]!}
-                                uid={uid}
-                                ghost
-                              />
+                              <div style={{ opacity: glowing ? 1 : 0.9 }}>
+                                <PieceArt
+                                  pieceId={slot}
+                                  edges={edgeMap[slot]!}
+                                  uid={uid}
+                                  ghost
+                                />
+                              </div>
                             </div>
-                          )}
+                          );
+                        })}
+
+                        <div className="absolute inset-0 z-[5]">
+                          <PlacedPuzzleLayer
+                            placed={placed}
+                            edgeMap={edgeMap}
+                            uid={uid}
+                          />
                         </div>
-                      );
-                    })}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <p className="mt-3 px-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40 sm:mt-4 sm:px-5">
-                Drag pieces — they click into place
-              </p>
-
-              {/* Felt tray strip */}
+              {/* Tray — shrink-0 so all loose pieces stay visible */}
+              {!showFullPuzzle && (
               <div
-                className="pointer-events-none absolute inset-x-3 bottom-3 top-[62%] rounded-2xl sm:inset-x-5 sm:top-[66%]"
+                className="relative z-10 mx-2 mb-1 mt-1.5 min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl sm:mx-4 sm:mb-3 sm:mt-3"
                 style={{
                   background:
-                    "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.28))",
+                    "linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.28))",
                   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                  paddingBottom: "max(0.25rem, env(safe-area-inset-bottom, 0px))",
                 }}
-                aria-hidden
-              />
+              >
+                <div className="grid grid-cols-3 gap-1 p-1.5 sm:gap-2.5 sm:p-3">
+                  {loose.map((piece) => {
+                    const isDragging = draggingId === piece.id;
+                    return (
+                      <button
+                        key={piece.id}
+                        type="button"
+                        aria-label={`Puzzle piece ${piece.id + 1}`}
+                        className="relative mx-auto flex aspect-square w-full max-w-[4.5rem] touch-none items-center justify-center rounded-xl bg-tone-5 outline-none sm:max-w-[6rem]"
+                        style={{
+                          opacity: isDragging ? 0.25 : 1,
+                          cursor: isDragging ? "grabbing" : "grab",
+                          WebkitTouchCallout: "none",
+                          WebkitUserSelect: "none",
+                          userSelect: "none",
+                        }}
+                        onPointerDown={(e) => onPointerDown(piece.id, e)}
+                        onPointerMove={onPointerMove}
+                        onPointerUp={onPointerUp}
+                        onPointerCancel={onPointerUp}
+                        onContextMenu={(e) => e.preventDefault()}
+                        onDragStart={(e) => e.preventDefault()}
+                      >
+                        <motion.div
+                          className="pointer-events-none h-[90%] w-[90%]"
+                          animate={{ rotate: isDragging ? 0 : piece.rot }}
+                          transition={{ type: "spring", stiffness: 400, damping: 26 }}
+                        >
+                          <PieceArt
+                            pieceId={piece.id}
+                            edges={edgeMap[piece.id]!}
+                            uid={uid}
+                          />
+                        </motion.div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              )}
 
-              {/* Loose pieces in the tray */}
-              {loose.map((piece) => {
-                const dragging = draggingId === piece.id;
-                return (
-                  <div
-                    key={piece.id}
-                    className="absolute"
-                    style={{
-                      width: `${pieceSizePct}%`,
-                      left: `${piece.x}%`,
-                      top: `${piece.y}%`,
-                      transform: "translate(-50%, -50%)",
-                      zIndex: dragging ? 60 : 20,
-                      cursor: dragging ? "grabbing" : "grab",
-                    }}
-                    onPointerDown={(e) => onPointerDown(piece.id, e)}
+              {revealing && (
+                <motion.p
+                  className="px-2 pb-2 text-center text-sm text-[var(--fg-muted)] sm:text-base"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  Solved in {formatTime(solveMsRef.current)} — scoring…
+                </motion.p>
+              )}
+
+              {/* Floating piece while dragging */}
+              {draggingPiece && (
+                <div
+                  className="pointer-events-none absolute z-50"
+                  style={{
+                    width: `${pieceSizePct}%`,
+                    left: `${dragPos.x}%`,
+                    top: `${dragPos.y}%`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                >
+                  <motion.div
+                    initial={false}
+                    animate={{ scale: 1.12 }}
                   >
-                    <motion.div
-                      animate={{
-                        scale: dragging ? 1.14 : 1,
-                        rotate: dragging ? 0 : piece.rot,
-                      }}
-                      transition={{ type: "spring", stiffness: 400, damping: 26 }}
-                      style={{
-                        filter: dragging
-                          ? "drop-shadow(0 20px 24px rgba(0,0,0,0.6))"
-                          : "drop-shadow(0 10px 14px rgba(0,0,0,0.5))",
-                      }}
-                    >
-                      <PieceArt
-                        pieceId={piece.id}
-                        edges={edgeMap[piece.id]!}
-                        uid={uid}
-                      />
-                    </motion.div>
-                  </div>
-                );
-              })}
+                    <PieceArt
+                      pieceId={draggingPiece.id}
+                      edges={edgeMap[draggingPiece.id]!}
+                      uid={`${uid}-drag`}
+                    />
+                  </motion.div>
+                </div>
+              )}
             </div>
           </div>
         );

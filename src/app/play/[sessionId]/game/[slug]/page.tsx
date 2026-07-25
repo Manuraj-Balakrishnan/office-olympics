@@ -14,8 +14,10 @@ import { WordScramble } from "@/games/WordScramble";
 import { TriviaQuiz } from "@/games/TriviaQuiz";
 import { loadIdentity } from "@/hooks/useSession";
 import { SessionPlayProvider, useSessionPlay } from "@/hooks/SessionPlayContext";
-import type { GameId, PlayerOrTeam } from "@/types/tournament";
+import { useTournamentStore } from "@/store/useTournamentStore";
+import type { GameId, PlayerOrTeam, TournamentSettings } from "@/types/tournament";
 import { TEAM_COLORS } from "@/data/games";
+import { getTeamEmblem } from "@/data/teamEmblems";
 
 const GAME_COMPONENTS: Record<GameId, React.ComponentType> = {
   reaction: ReactionTest,
@@ -114,6 +116,7 @@ export default function PlayGamePage({
   const [bootError, setBootError] = useState<string | null>(null);
   const Game = GAME_COMPONENTS[slug as GameId];
   const booted = useRef(false);
+  const updateSettings = useTournamentStore((s) => s.updateSettings);
 
   useEffect(() => {
     const id = loadIdentity(sessionId);
@@ -155,15 +158,31 @@ export default function PlayGamePage({
 
         if (!booted.current) {
           booted.current = true;
+          const settings = session.settings as TournamentSettings | undefined;
+          if (settings) {
+            updateSettings({
+              assistMode: Boolean(settings.assistMode),
+              huddleEnabled: Boolean(settings.huddleEnabled),
+              teamPlayMode:
+                settings.teamPlayMode === "everyone" ? "everyone" : "one-rep",
+            });
+          }
           const idx = session.players.findIndex(
             (p: { id: string }) => p.id === player.id,
           );
+          const team =
+            session.mode === "teams" && player.teamId
+              ? session.teams?.find((t: { id: string }) => t.id === player.teamId)
+              : undefined;
           setBootError(null);
           setParticipant({
             id: player.id,
             name: player.name,
-            emoji: player.emoji ?? "🙋",
-            color: TEAM_COLORS[idx % TEAM_COLORS.length]!,
+            emoji: player.emoji ?? "",
+            color:
+              (team
+                ? (getTeamEmblem(team.emoji)?.color ?? null) ?? team.color
+                : null) ?? TEAM_COLORS[idx % TEAM_COLORS.length]!,
             kind: "player",
           });
         }
@@ -182,7 +201,7 @@ export default function PlayGamePage({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [sessionId, slug, router]);
+  }, [sessionId, slug, router, updateSettings]);
 
   if (!Game) {
     return <p className="p-8 text-center">Unknown game</p>;
