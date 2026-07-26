@@ -436,19 +436,20 @@ export function SpeedPuzzle() {
   const [dragPos, setDragPos] = useState({ x: 50, y: 50 });
   const [hoverSlot, setHoverSlot] = useState<number | null>(null);
   const [pieceSizePct, setPieceSizePct] = useState(22);
-  /** Safe mobile default — equal goal+board at 280 overflows phones before measure. */
-  const [boardPx, setBoardPx] = useState(148);
-  const [goalPx, setGoalPx] = useState(148);
+  /** Prefer desktop-friendly defaults; measureLayout corrects once the playfield mounts. */
+  const [boardPx, setBoardPx] = useState(240);
+  const [goalPx, setGoalPx] = useState(160);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [revealing, setRevealing] = useState(false);
   const [results, setResults] = useState<ResultRow[] | null>(null);
-  /** Short landscape — tray sits beside the board+reference row. */
+  /** Wide layout — tray sits beside the board+reference row (all levels). */
   const [sideBySide, setSideBySide] = useState(false);
   /** Narrow portrait — small goal thumbnail + larger board. */
   const [compactGoal, setCompactGoal] = useState(false);
 
   const playfieldRef = useRef<HTMLDivElement>(null);
+  const playfieldRoRef = useRef<ResizeObserver | null>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
   const participantsRef = useRef<ResultRow["participant"][]>([]);
   const finishRef = useRef<(() => void) | null>(null);
@@ -491,29 +492,37 @@ export function SpeedPuzzle() {
     if (fr.width <= 0 || fr.height <= 0) return;
 
     const g = LEVEL_GRIDS[levelIndexRef.current]!;
-    const landscape = fr.width > fr.height && fr.height < 560;
-    // Equal goal+board pair overflows / cramps below ~420px; use compact thumbnail.
-    const compact = !landscape && fr.width < 420;
-    sideBySideRef.current = landscape;
+    // Wide viewports: Goal | Board | Pieces (same for every level).
+    const sideBySideLayout = fr.width >= 520;
+    // Phones: stacked with a compact goal thumbnail.
+    const compact = !sideBySideLayout && fr.width < 420;
+    sideBySideRef.current = sideBySideLayout;
     compactGoalRef.current = compact;
-    setSideBySide(landscape);
+    setSideBySide(sideBySideLayout);
     setCompactGoal(compact);
 
-    const gap = fr.width < 360 ? 8 : 12;
+    const gap = fr.width < 360 ? 8 : sideBySideLayout ? 16 : 12;
 
     let side: number;
     let goal: number;
-    if (landscape) {
-      const trayW = Math.min(fr.width * 0.36, 240);
-      const stageW = fr.width - trayW - 20;
-      const byW = (stageW - gap) / 2;
+    if (sideBySideLayout) {
+      const trayW = Math.min(fr.width * 0.38, 300);
+      const stageW = fr.width - trayW - 24;
       const byH = fr.height - 24;
-      side = Math.round(Math.max(110, Math.min(byW, byH, 320)));
-      goal = side;
+      const maxBoard = fr.width >= 900 ? 440 : fr.width >= 720 ? 400 : 340;
+      // Board primary; goal is a smaller reference beside it.
+      side = Math.round(Math.max(160, Math.min(stageW * 0.56, byH * 0.92, maxBoard)));
+      goal = Math.round(
+        Math.max(110, Math.min(side * 0.72, stageW - side - gap, byH * 0.85, 300)),
+      );
+      if (goal + side + gap > stageW) {
+        goal = Math.round(Math.max(100, stageW - side - gap));
+      }
     } else if (compact) {
-      const trayFrac = g >= 4 ? 0.36 : 0.34;
-      const trayMin = fr.height < 640 ? (g >= 4 ? 112 : 100) : g >= 4 ? 148 : 132;
-      const trayMax = fr.height < 640 ? (g >= 4 ? 188 : 168) : g >= 4 ? 220 : 200;
+      // Same tray budget for both levels so L1/L2 share one layout.
+      const trayFrac = 0.36;
+      const trayMin = fr.height < 640 ? 112 : 148;
+      const trayMax = fr.height < 640 ? 188 : 220;
       const trayBudget = Math.min(trayMax, Math.max(trayMin, fr.height * trayFrac));
       const padX = 12;
       const stageW = Math.max(120, fr.width - padX * 2);
@@ -531,15 +540,16 @@ export function SpeedPuzzle() {
         goal = Math.round(Math.max(88, Math.min(goal, side * 0.65)));
       }
     } else {
-      const trayFrac = g >= 4 ? 0.33 : 0.31;
-      const trayMin = fr.height < 640 ? (g >= 4 ? 120 : 108) : g >= 4 ? 160 : 140;
-      const trayMax = fr.height < 640 ? (g >= 4 ? 200 : 180) : g >= 4 ? 248 : 220;
+      // Mid widths (420–519): equal-ish pair, tray below.
+      const trayFrac = 0.33;
+      const trayMin = fr.height < 640 ? 120 : 160;
+      const trayMax = fr.height < 640 ? 200 : 248;
       const trayBudget = Math.min(trayMax, Math.max(trayMin, fr.height * trayFrac));
       const stageW = fr.width - 16;
       const stageH = fr.height - trayBudget - 8;
       const byW = (stageW - gap) / 2;
       const byH = stageH;
-      const maxBoard = fr.width < 520 ? 200 : 260;
+      const maxBoard = 200;
       side = Math.round(Math.max(110, Math.min(maxBoard, byW, byH)));
       goal = side;
     }
@@ -555,7 +565,9 @@ export function SpeedPuzzle() {
       const cell = boardW / g;
       const piecePx = cell * ((CELL + TAB * 2) / CELL);
       const pct = (piecePx / fr.width) * 100;
-      setPieceSizePct(Math.min(landscape ? 34 : compact ? 30 : 28, Math.max(12, pct)));
+      setPieceSizePct(
+        Math.min(sideBySideLayout ? 28 : compact ? 30 : 28, Math.max(12, pct)),
+      );
       return;
     }
 
@@ -570,26 +582,48 @@ export function SpeedPuzzle() {
     const cell = boardW / g;
     const piecePx = cell * ((CELL + TAB * 2) / CELL);
     const pct = (piecePx / fr.width) * 100;
-    setPieceSizePct(Math.min(landscape ? 34 : compact ? 30 : 28, Math.max(12, pct)));
+    setPieceSizePct(
+      Math.min(sideBySideLayout ? 28 : compact ? 30 : 28, Math.max(12, pct)),
+    );
   }, []);
 
+  const attachPlayfield = useCallback(
+    (node: HTMLDivElement | null) => {
+      playfieldRef.current = node;
+      playfieldRoRef.current?.disconnect();
+      playfieldRoRef.current = null;
+      if (!node) return;
+      const ro = new ResizeObserver(() => measureLayout({ force: true }));
+      playfieldRoRef.current = ro;
+      ro.observe(node);
+      // Layout may still be settling (framer-motion / flex); measure now + next frames.
+      measureLayout({ force: true });
+      requestAnimationFrame(() => {
+        measureLayout({ force: true });
+        requestAnimationFrame(() => measureLayout({ force: true }));
+      });
+    },
+    [measureLayout],
+  );
+
   useEffect(() => {
-    measureLayout({ force: true });
     const onWinResize = () => measureLayout({ force: true });
     window.addEventListener("resize", onWinResize);
     const vv = window.visualViewport;
     vv?.addEventListener("resize", onWinResize);
-    const field = playfieldRef.current;
-    const ro =
-      typeof ResizeObserver !== "undefined" && field
-        ? new ResizeObserver(() => measureLayout({ force: true }))
-        : null;
-    if (field && ro) ro.observe(field);
     return () => {
       window.removeEventListener("resize", onWinResize);
       vv?.removeEventListener("resize", onWinResize);
-      ro?.disconnect();
+      playfieldRoRef.current?.disconnect();
+      playfieldRoRef.current = null;
     };
+  }, [measureLayout]);
+
+  useEffect(() => {
+    if (!playing) return;
+    measureLayout({ force: true });
+    const id = requestAnimationFrame(() => measureLayout({ force: true }));
+    return () => cancelAnimationFrame(id);
   }, [measureLayout, playing, levelIndex]);
 
   const slotCenterPct = useCallback((slot: number) => {
@@ -817,7 +851,6 @@ export function SpeedPuzzle() {
   const solvedCount = correctPlaced.size;
   const draggingPieceId = draggingId;
   const showFullPuzzle = revealing || isBoardSolved(board);
-  const trayCols = grid >= 4 ? 4 : 3;
 
   return (
     <GameShell
@@ -892,7 +925,7 @@ export function SpeedPuzzle() {
 
         return (
           <div
-            className="relative mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-x-hidden px-2 pt-1 sm:max-w-xl sm:px-4 sm:pt-2 md:max-w-2xl"
+            className="relative mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-x-hidden px-2 pt-1 sm:max-w-xl sm:px-4 sm:pt-2 md:max-w-3xl lg:max-w-4xl"
             style={{
               paddingBottom: "max(0.35rem, calc(env(safe-area-inset-bottom, 0px) + 0.25rem))",
             }}
@@ -969,7 +1002,7 @@ export function SpeedPuzzle() {
             </div>
 
             <div
-              ref={playfieldRef}
+              ref={attachPlayfield}
               className={`relative isolate flex min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-2xl border border-white/[0.08] select-none sm:rounded-3xl ${
                 sideBySide ? "flex-row items-stretch gap-2 p-2" : "flex-col"
               }`}
@@ -995,7 +1028,7 @@ export function SpeedPuzzle() {
               <div
                 className={`relative z-10 flex min-w-0 shrink-0 items-center justify-center ${
                   sideBySide
-                    ? "flex-1 gap-2 px-1 py-1"
+                    ? "min-h-0 flex-1 gap-3 px-2 py-2"
                     : compactGoal
                       ? "w-full gap-2 px-2.5 pt-2"
                       : "w-full gap-2 px-2 pt-2 sm:gap-3 sm:px-4 sm:pt-3"
@@ -1166,7 +1199,7 @@ export function SpeedPuzzle() {
               <div
                 className={`relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden ${
                   sideBySide
-                    ? "mx-0 mb-0 mt-0 w-[min(42%,17rem)] flex-1 rounded-xl"
+                    ? "mx-0 mb-0 mt-0 w-[min(40%,18.75rem)] shrink-0 self-stretch rounded-xl"
                     : compactGoal
                       ? "mx-2 mb-2 mt-1.5 min-h-[5.75rem] max-h-[40%] flex-1 rounded-xl"
                       : "mx-2 mb-2 mt-2 min-h-[6.5rem] max-h-[42%] flex-1 rounded-2xl sm:mx-4 sm:mb-3 sm:mt-2.5 sm:min-h-[8rem] sm:rounded-3xl"
@@ -1194,13 +1227,9 @@ export function SpeedPuzzle() {
                   style={{ scrollbarGutter: "stable" }}
                 >
                   <div
-                    className={`grid p-2 sm:p-3 ${
-                      trayCols === 4
-                        ? "grid-cols-4 gap-1.5 sm:gap-2"
-                        : compactGoal
-                          ? "grid-cols-3 gap-1.5"
-                          : "grid-cols-3 gap-1.5 sm:gap-2.5"
-                    } ${sideBySide ? "auto-rows-max content-start" : ""}`}
+                    className={`grid grid-cols-4 gap-1.5 p-2 sm:gap-2.5 sm:p-3 ${
+                      sideBySide ? "auto-rows-max content-start" : ""
+                    }`}
                   >
                     {loose.map((piece) => {
                       const isDragging = draggingId === piece.id;
@@ -1209,14 +1238,8 @@ export function SpeedPuzzle() {
                           key={`${levelIndex}-${piece.id}`}
                           type="button"
                           aria-label={`Puzzle piece ${piece.id + 1}`}
-                          className={`relative mx-auto flex aspect-square w-full touch-none items-center justify-center overflow-hidden outline-none ${
+                          className={`relative mx-auto flex aspect-square w-full max-w-[3.25rem] touch-none items-center justify-center overflow-hidden outline-none sm:max-w-[5.5rem] md:max-w-[6.25rem] ${
                             compactGoal ? "rounded-lg" : "rounded-xl sm:rounded-2xl"
-                          } ${
-                            trayCols === 4
-                              ? "max-w-[3.25rem] sm:max-w-[4.75rem] md:max-w-[5.25rem]"
-                              : compactGoal
-                                ? "max-w-[3.5rem]"
-                                : "max-w-[3.75rem] sm:max-w-[5.5rem] md:max-w-[6rem]"
                           }`}
                           style={{
                             opacity: isDragging ? 0.22 : 1,
