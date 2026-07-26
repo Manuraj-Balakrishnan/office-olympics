@@ -8,11 +8,14 @@ function assert(cond: unknown, msg: string): asserts cond {
 assert(normalizeToThousand("reaction", 150) >= 990, "elite reaction");
 assert(normalizeToThousand("reaction", 300) > normalizeToThousand("reaction", 500), "faster better");
 assert(normalizeToThousand("reaction", 1200) < 100, "false start low");
+assert(normalizeToThousand("reaction", 150) === 1000, "reaction 150ms");
+assert(normalizeToThousand("reaction", 300) === 790, "reaction 300ms");
 
-// Simon: 15 = 1000, 10 < 1000
-assert(normalizeToThousand("simon", 15) === 1000, "simon 15");
-assert(normalizeToThousand("simon", 10) < 1000, "simon 10 not max");
-assert(normalizeToThousand("simon", 5) === 333, "simon 5");
+// Simon: perfect clear = 10 steps → 1000
+assert(normalizeToThousand("simon", 10) === 1000, "simon perfect");
+assert(normalizeToThousand("simon", 5) === 500, "simon half");
+assert(normalizeToThousand("simon", 15) === 1000, "simon over-cap clamps to 10");
+assert(clampRawScore("simon", 99) === 10, "simon raw cap");
 
 // Memory: perfect clear ~1100 raw → 1000; partial stays modest
 assert(normalizeToThousand("memory", 100) < 200, "1 match modest");
@@ -21,23 +24,29 @@ assert(normalizeToThousand("memory", 900) < 900, "messy clear not max");
 assert(normalizeToThousand("memory", 1100) === 1000, "perfect clear");
 assert(normalizeToThousand("memory", 1200) === 1000, "clamped elite");
 
-// Spot
-assert(normalizeToThousand("spot-difference", 1100) === 1000, "spot clear");
+// Spot: (found/total)*800 + speed≤300 − hints; max 1100
+assert(normalizeToThousand("spot-difference", 1100) === 1000, "spot clear+speed");
+assert(normalizeToThousand("spot-difference", 800) === 727, "spot all finds no speed");
 assert(normalizeToThousand("spot-difference", 400) < 400, "spot partial");
+assert(clampRawScore("spot-difference", 9999) === 1100, "spot raw cap");
 
-// One-second
-assert(normalizeToThousand("one-second", 600) === 1000, "one-sec max");
-assert(normalizeToThousand("one-second", 300) === 500, "one-sec half");
+// One-second: 2 scenes × 5 questions × 100 pts → max 1000
+assert(normalizeToThousand("one-second", 1000) === 1000, "one-sec max");
+assert(normalizeToThousand("one-second", 500) === 500, "one-sec half");
+assert(clampRawScore("one-second", 9999) === 1000, "one-sec raw cap");
 
-// Stroop: ~45 correct in 90s = 1000
-assert(normalizeToThousand("stroop", 45) === 1000, "stroop elite");
+// Stroop: 10 pts per correct; ~100 correct → 1000
+assert(normalizeToThousand("stroop", 1000) === 1000, "stroop elite");
 assert(normalizeToThousand("stroop", 0) === 0, "stroop zero");
-assert(normalizeToThousand("stroop", 22) === 489, "stroop mid");
-assert(clampRawScore("stroop", 999) === 80, "stroop raw cap");
+assert(normalizeToThousand("stroop", 500) === 500, "stroop mid");
+assert(clampRawScore("stroop", 9999) === 1000, "stroop raw cap");
+assert(normalizeToThousand("stroop", 250) === 250, "stroop 25 correct");
 
-// Typing capped raw
+// Typing: 100 WPM @ 100% = 1000
 assert(clampRawScore("typing", 99999) === 1500, "typing raw cap");
-assert(normalizeToThousand("typing", 1000) === 1000, "typing elite");
+assert(normalizeToThousand("typing", 1000) === 1000, "typing elite 100 WPM");
+assert(normalizeToThousand("typing", 830) === 830, "typing 83 WPM");
+assert(normalizeToThousand("typing", 1500) === 1000, "typing over-cap");
 
 // Speed puzzle: points 0–1000, faster solve earns more
 assert(normalizeToThousand("speed-puzzle", 1000) === 1000, "puzzle elite pts");
@@ -46,13 +55,17 @@ assert(
   "puzzle higher pts better",
 );
 assert(normalizeToThousand("speed-puzzle", 0) === 0, "puzzle zero");
+assert(normalizeToThousand("speed-puzzle", 150) === 150, "puzzle partial credit");
 
-// Trivia
-assert(normalizeToThousand("trivia", 3000) === 1000, "trivia max");
-assert(normalizeToThousand("trivia", 1500) === 500, "trivia half");
+// Trivia: 10 questions × 100 pts → max 1000
+assert(normalizeToThousand("trivia", 1000) === 1000, "trivia max");
+assert(normalizeToThousand("trivia", 500) === 500, "trivia half");
+assert(clampRawScore("trivia", 9999) === 1000, "trivia raw cap");
+assert(normalizeToThousand("trivia", 1000) === normalizeToThousand("logo-remix", 1000), "quiz games match");
 
-// Word scramble
-assert(normalizeToThousand("word-scramble", 12) === 1000, "scramble elite");
-assert(normalizeToThousand("word-scramble", 6) === 500, "scramble half");
+// Logo Remix: 10 logos × 100 pts → max 1000
+assert(normalizeToThousand("logo-remix", 1000) === 1000, "logo elite");
+assert(normalizeToThousand("logo-remix", 500) === 500, "logo half");
+assert(clampRawScore("logo-remix", 9999) === 1000, "logo raw cap");
 
 console.log("Score normalize checks: PASS");

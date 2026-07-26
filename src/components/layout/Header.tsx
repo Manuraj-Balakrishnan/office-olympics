@@ -60,7 +60,7 @@ export function Header() {
             aria-label="Office Olympics home"
           >
             <span className="font-display text-[0.98rem] font-extrabold tracking-[-0.045em] sm:text-[1.125rem]">
-              <span className="text-[var(--fg)] transition-colors group-hover:text-[var(--accent-soft)]">
+              <span className="text-[var(--fg)] transition-colors group-hover:text-[var(--primary-from)]">
                 Office
               </span>
               <span className="text-[var(--primary-from)] transition group-hover:brightness-110">

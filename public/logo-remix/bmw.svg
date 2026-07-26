@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img">
+  <title>BMW</title>
+  <circle cx="50" cy="50" r="50" fill="#0066B1"/>
+  <circle cx="50" cy="50" r="42" fill="#FFFFFF"/>
+  <path d="M50 10A40 40 0 0 0 10 50H50Z" fill="#FFFFFF"/>
+  <path d="M50 10A40 40 0 0 1 90 50H50Z" fill="#0066B1"/>
+  <path d="M10 50A40 40 0 0 0 50 90V50Z" fill="#0066B1"/>
+  <path d="M90 50A40 40 0 0 1 50 90V50Z" fill="#FFFFFF"/>
+  <circle cx="50" cy="50" r="40" fill="none" stroke="#0066B1" stroke-width="1.25"/>
+</svg>

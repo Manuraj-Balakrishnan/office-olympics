@@ -20,9 +20,9 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 const DIFFICULTY_CLASS: Record<string, string> = {
-  Easy: "text-emerald-300 bg-emerald-400/10 border-emerald-400/25",
-  Medium: "text-amber-200 bg-amber-400/10 border-amber-400/25",
-  Hard: "text-rose-300 bg-rose-400/10 border-rose-400/25",
+  Easy: "text-[var(--diff-easy)] bg-emerald-500/15 border-emerald-500/30",
+  Medium: "text-[var(--diff-medium)] bg-amber-500/15 border-amber-500/30",
+  Hard: "text-[var(--diff-hard)] bg-rose-500/15 border-rose-500/30",
 };
 
 export function HowToPlayIntro({

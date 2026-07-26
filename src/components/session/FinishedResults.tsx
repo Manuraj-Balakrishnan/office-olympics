@@ -120,11 +120,16 @@ export function FinishedResults({
               {board.map((row, i) => {
                 const isChamp = i === 0;
                 const isMe = highlightId != null && row.participant.id === highlightId;
+                const gameScores = completedGames.map((g) => ({
+                  gameId: g.gameId,
+                  title: g.title,
+                  score: row.byGame[g.gameId],
+                }));
                 return (
                   <motion.li
                     key={row.participant.id}
                     variants={staggerItem}
-                    className={`flex items-center gap-3 px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 ${
+                    className={`flex items-start gap-3 px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 ${
                       i > 0 ? "border-t border-[var(--border)]" : ""
                     } ${
                       isMe
@@ -134,7 +139,7 @@ export function FinishedResults({
                           : ""
                     }`}
                   >
-                    <span className="w-8 shrink-0 text-center font-display text-lg font-bold">
+                    <span className="w-8 shrink-0 pt-0.5 text-center font-display text-lg font-bold">
                       {i < 3 ? (
                         MEDAL[i]
                       ) : (
@@ -149,26 +154,53 @@ export function FinishedResults({
                       color={row.participant.color}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-display text-base font-bold sm:text-lg">
-                        {row.participant.name}
-                        {isMe ? (
-                          <span className="ml-2 text-xs font-semibold text-[var(--accent-soft)]">
-                            You
-                          </span>
-                        ) : null}
-                      </p>
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="truncate font-display text-base font-bold sm:text-lg">
+                          {row.participant.name}
+                          {isMe ? (
+                            <span className="ml-2 text-xs font-semibold text-[var(--accent-soft)]">
+                              You
+                            </span>
+                          ) : null}
+                        </p>
+                        <p
+                          className="shrink-0 font-display text-xl font-extrabold tabular-nums sm:text-2xl"
+                          style={{ color: row.participant.color }}
+                        >
+                          {row.total}
+                        </p>
+                      </div>
                       {isChamp && (
                         <p className="text-xs font-medium text-[var(--fg-muted)]">
                           Tournament winner
                         </p>
                       )}
+                      {gameScores.length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {gameScores.map((gs) => (
+                            <li
+                              key={gs.gameId}
+                              className="flex items-center justify-between gap-2 text-xs sm:text-sm"
+                            >
+                              <span className="min-w-0 truncate text-[var(--fg-muted)]">
+                                {gs.title}
+                              </span>
+                              <span
+                                className="shrink-0 font-display font-bold tabular-nums"
+                                style={{
+                                  color:
+                                    gs.score != null
+                                      ? row.participant.color
+                                      : "var(--fg-muted)",
+                                }}
+                              >
+                                {gs.score != null ? gs.score : "—"}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
-                    <p
-                      className="font-display text-xl font-extrabold tabular-nums sm:text-2xl"
-                      style={{ color: row.participant.color }}
-                    >
-                      {row.total}
-                    </p>
                   </motion.li>
                 );
               })}
@@ -200,37 +232,43 @@ export function FinishedResults({
               className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)]"
             >
               {completedGames.map((g) => {
-                const winner = g.top[0];
+                const top3 = g.top.slice(0, 3);
                 return (
                   <motion.li
                     key={g.gameId}
                     variants={staggerItem}
-                    className="flex items-center gap-3 bg-[color-mix(in_srgb,var(--bg-card)_70%,transparent)] px-4 py-3.5 sm:px-5"
+                    className="bg-[color-mix(in_srgb,var(--bg-card)_70%,transparent)] px-4 py-3.5 sm:px-5"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-display text-sm font-bold sm:text-base">
-                        {g.title}
-                      </p>
-                      {winner && (
-                        <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-[var(--fg-muted)] sm:text-sm">
+                    <p className="truncate font-display text-sm font-bold sm:text-base">
+                      {g.title}
+                    </p>
+                    <ol className="mt-2 space-y-1.5">
+                      {top3.map((row, i) => (
+                        <li
+                          key={row.playerId}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <span className="w-6 shrink-0 text-center">
+                            {MEDAL[i]}
+                          </span>
                           <PlayerAvatar
-                            avatar={winner.emoji}
-                            name={winner.name}
+                            avatar={row.emoji}
+                            name={row.name}
                             size="xs"
                             rounded="rounded-md"
                           />
-                          <span className="truncate">{winner.name}</span>
-                        </p>
-                      )}
-                    </div>
-                    {winner && (
-                      <p
-                        className="shrink-0 font-display text-lg font-extrabold tabular-nums sm:text-xl"
-                        style={{ color: winner.color }}
-                      >
-                        {winner.score}
-                      </p>
-                    )}
+                          <span className="min-w-0 flex-1 truncate font-medium">
+                            {row.name}
+                          </span>
+                          <span
+                            className="font-display font-bold tabular-nums"
+                            style={{ color: row.color }}
+                          >
+                            {row.score}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
                   </motion.li>
                 );
               })}

@@ -57,7 +57,7 @@ export const SPOT_DIFFERENCE_STAGES: SpotDifferencePair[] = [
     difficulty: "easy",
     leftUrl: "/spot-difference/bike-left.png",
     rightUrl: "/spot-difference/bike-right.png",
-    durationSec: 55,
+    durationSec: 60,
     differences: [
       { id: "d1", x: 0.145, y: 0.275, radius: 0.085, label: "Birds" },
       { id: "d2", x: 0.72, y: 0.15, radius: 0.085, label: "Extra cloud" },
@@ -72,7 +72,7 @@ export const SPOT_DIFFERENCE_STAGES: SpotDifferencePair[] = [
     difficulty: "medium",
     leftUrl: "/spot-difference/pirates-left.png",
     rightUrl: "/spot-difference/pirates-right.png",
-    durationSec: 80,
+    durationSec: 120,
     differences: [
       {
         id: "d1",
@@ -95,7 +95,7 @@ export const SPOT_DIFFERENCE_STAGES: SpotDifferencePair[] = [
     difficulty: "hard",
     leftUrl: "/spot-difference/cartoon-left.png",
     rightUrl: "/spot-difference/cartoon-right.png",
-    durationSec: 120,
+    durationSec: 180,
     differences: [
       { id: "d1", x: 0.106, y: 0.13, radius: 0.1, label: "Curtain shape" },
       { id: "d2", x: 0.314, y: 0.096, radius: 0.1, label: "Clock hands" },

@@ -13,7 +13,7 @@ export type GameId =
   | "stroop"
   | "typing"
   | "speed-puzzle"
-  | "word-scramble"
+  | "logo-remix"
   | "trivia";
 
 export interface Player {

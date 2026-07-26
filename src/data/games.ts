@@ -24,9 +24,9 @@ export const GAMES: GameDefinition[] = [
     description: "Repeat the growing color sequence before you slip.",
     howToPlay: [
       "Watch the pads light up — then tap the same order back.",
-      "Each clear adds one more step to the chain.",
+      "Each clear adds one more step — up to 10.",
       "Playback speeds up as you climb.",
-      "One wrong pad ends the run. Score = longest chain.",
+      "One wrong pad ends the run. Clear all 10 for a perfect score.",
     ],
     icon: "Music",
     difficulty: "Medium",
@@ -41,13 +41,13 @@ export const GAMES: GameDefinition[] = [
     howToPlay: [
       "Tap two cards to flip them.",
       "Match identical office photo pairs.",
+      "You have 60 seconds to clear the board.",
       "Chain matches for combo bonus points.",
-      "Clear the board fast for a speed bonus.",
-      "Fewer moves and faster clears = higher score.",
+      "Clear fast for a speed bonus — fewer moves score higher.",
     ],
     icon: "LayoutGrid",
     difficulty: "Easy",
-    durationSec: 90,
+    durationSec: 60,
     category: "memory",
     route: "/game/memory",
   },
@@ -56,27 +56,27 @@ export const GAMES: GameDefinition[] = [
     title: "Spot the Difference",
     description: "Three original illustrator puzzles — Easy country ride, Medium pirate ships, Hard kitchen cartoon.",
     howToPlay: [
-      "Play three stages in order: Easy → Medium → Hard.",
+      "Play three stages in order: Easy (1 min) → Medium (2 min) → Hard (3 min).",
       "Compare the left (original) and right pictures.",
       "Tap every difference on the right image.",
       "Each stage gives you 2 hints — a pulse marks the area (you still tap to score).",
-      "Hints cost a few points. Faster full clears earn a speed bonus.",
+      "Hints cost 25 pts each. Full clear faster than the 6 min budget earns a speed bonus.",
     ],
     icon: "Search",
     difficulty: "Hard",
-    durationSec: 240,
+    durationSec: 360,
     category: "memory",
     route: "/game/spot-difference",
   },
   {
     id: "one-second",
     title: "Seconds Challenge",
-    description: "Three real office photos flash for 3 seconds — then prove what you saw.",
+    description: "Two real office photos flash for 5 seconds — then prove what you saw.",
     howToPlay: [
-      "3 office photos — each flashes for 3 seconds.",
+      "2 office photos — each flashes for 5 seconds.",
       "Memorize details: colors, objects, and people.",
-      "Then answer 5 questions about what you saw.",
-      "Faster correct answers earn a speed bonus.",
+      "Then answer 5 questions about each scene.",
+      "Each correct answer = 100 points. Perfect run = 1000.",
       "Wrong answers score zero for that question.",
     ],
     icon: "Eye",
@@ -88,13 +88,13 @@ export const GAMES: GameDefinition[] = [
   {
     id: "stroop",
     title: "Stroop Challenge",
-    description: "Tap the ink color — ignore the word. 90 seconds of rapid-fire chaos.",
+    description: "Tap the ink color — ignore the word. 10 points correct, −5 wrong.",
     howToPlay: [
       "A color word appears (like RED).",
       "Ignore the word — tap the ink color instead.",
       "Example: BLUE written in green → tap GREEN.",
-      "90 seconds — build a streak of correct taps.",
-      "Buttons shuffle each round. Wrong tap breaks your streak.",
+      "90 seconds — each correct tap = 10 points.",
+      "Wrong taps cost 5 points and break your streak.",
     ],
     icon: "Palette",
     difficulty: "Medium",
@@ -110,7 +110,7 @@ export const GAMES: GameDefinition[] = [
       "Type the paragraph exactly as shown.",
       "Green = correct letter; red = typo.",
       "Finish the whole paragraph to lock your score.",
-      "Score = WPM × accuracy.",
+      "Score = WPM × accuracy × 10 (100 WPM @ 100% = perfect).",
     ],
     icon: "Keyboard",
     difficulty: "Medium",
@@ -121,51 +121,49 @@ export const GAMES: GameDefinition[] = [
   {
     id: "speed-puzzle",
     title: "Speed Puzzle",
-    description: "Assemble the jigsaw fast — quicker clears earn more points.",
+    description: "Clear a 9-piece jigsaw, then a tougher 16-piece — speed wins.",
     howToPlay: [
+      "Level 1: 3×3 logo — 1 minute. Level 2: 4×4 scene — 3 minutes.",
       "Pieces start scattered in the tray below.",
-      "Drag each piece onto the board.",
-      "Drop near the right spot — it snaps when it fits.",
-      "Faster finishes score more. Slow solves score less.",
+      "Use the Goal preview to match the real picture.",
+      "Drag each piece onto any empty slot — wrong fits can be moved again.",
+      "Faster clears score more (up to 400 + 600 = 1000 pts).",
     ],
     icon: "Puzzle",
     difficulty: "Medium",
-    durationSec: 90,
+    durationSec: 240,
     category: "memory",
     route: "/game/speed-puzzle",
   },
   {
-    id: "word-scramble",
-    title: "Word Scramble Sprint",
-    description: "Unscramble office words as fast as you can.",
+    id: "logo-remix",
+    title: "Logo Remix",
+    description: "Famous logos — guess the brand before time runs out.",
     howToPlay: [
-      "Letters are jumbled — unscramble the word.",
-      "A clue sits under the letters.",
-      "Type your answer and hit Check / Enter.",
-      "Hint once per word to reveal the first letter.",
-      "Pass skips to the next word if you are stuck.",
-      "Solve as many as you can in 60 seconds.",
+      "Each round shows a famous logo.",
+      "Pick the brand from four options before the 10s ring empties.",
+      "Correct = 100 pts. 10 logos. Perfect run = 1000.",
     ],
-    icon: "Shuffle",
-    difficulty: "Easy",
-    durationSec: 60,
-    category: "typing",
-    route: "/game/word-scramble",
+    icon: "ScanSearch",
+    difficulty: "Medium",
+    durationSec: 100,
+    category: "knowledge",
+    route: "/game/logo-remix",
   },
   {
     id: "trivia",
     title: "Rapid-Fire Quiz",
-    description: "15 questions, 10 seconds each, speed bonuses like Kahoot.",
+    description: "10 questions, 10 seconds each — 100 points per correct answer.",
     howToPlay: [
-      "15 questions — 10 seconds each.",
+      "10 questions — 10 seconds each.",
       "Tap before the ring runs out. Green = correct, red = wrong.",
-      "Hint once per question removes 1 wrong answer (smaller bonus).",
-      "Faster correct answers earn bigger bonuses.",
+      "Hint once per question removes 1 wrong answer.",
+      "Each correct answer = 100 points. Perfect run = 1000.",
       "Wrong or timeout = no points for that question.",
     ],
     icon: "HelpCircle",
     difficulty: "Medium",
-    durationSec: 120,
+    durationSec: 100,
     category: "knowledge",
     route: "/game/trivia",
   },
@@ -178,6 +176,7 @@ export const GAME_MAP = Object.fromEntries(
 /** Legacy ids remapped after game roster changes (e.g. emoji-decode → speed-puzzle). */
 const LEGACY_GAME_IDS: Record<string, GameId> = {
   "emoji-decode": "speed-puzzle",
+  "word-scramble": "logo-remix",
 };
 
 export function migrateGameId(id: string): GameId | null {
@@ -205,10 +204,19 @@ export function sanitizeGameIds(ids: string[]): GameId[] {
   return out;
 }
 
-/** Sanitize the tournament lineup. Empty/corrupt → full default roster. */
+/** Sanitize the tournament lineup. Empty/corrupt → full default roster.
+ *  Also appends any newly added games missing from a saved order. */
 export function sanitizeGameOrder(ids: string[]): GameId[] {
   const out = sanitizeGameIds(ids);
-  return out.length > 0 ? out : GAMES.map((g) => g.id);
+  if (out.length === 0) return GAMES.map((g) => g.id);
+  const seen = new Set(out);
+  for (const g of GAMES) {
+    if (!seen.has(g.id)) {
+      seen.add(g.id);
+      out.push(g.id);
+    }
+  }
+  return out;
 }
 
 export const CATEGORY_COLORS: Record<GameDefinition["category"], string> = {

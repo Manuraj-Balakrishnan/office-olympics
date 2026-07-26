@@ -48,7 +48,7 @@ export function RankTable({
                 {row.total}
               </p>
               {row.lastDelta > 0 ? (
-                <span className="text-xs font-semibold text-emerald-400">
+                <span className="text-xs font-semibold text-[var(--delta-fg)]">
                   +{row.lastDelta}
                 </span>
               ) : (
@@ -93,7 +93,7 @@ export function RankTable({
               </td>
               <td className="px-4 py-3 text-right">
                 {row.lastDelta > 0 ? (
-                  <span className="rounded-lg bg-emerald-500/15 px-2 py-0.5 text-sm font-semibold text-emerald-400">
+                  <span className="rounded-lg bg-emerald-500/15 px-2 py-0.5 text-sm font-semibold text-[var(--delta-fg)]">
                     +{row.lastDelta}
                   </span>
                 ) : (

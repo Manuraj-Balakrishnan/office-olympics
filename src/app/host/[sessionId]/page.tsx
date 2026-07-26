@@ -109,12 +109,12 @@ function PlayerRosterRow({
           )}
         </div>
         {pending && (
-          <span className="shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200">
+          <span className="shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--status-playing)]">
             Playing
           </span>
         )}
         {doneRound && (
-          <span className="shrink-0 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">
+          <span className="shrink-0 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--status-done)]">
             Done
           </span>
         )}
@@ -183,7 +183,7 @@ function LiveRoundBoard({
                     </p>
                   </>
                 ) : (
-                  <span className="rounded-full bg-amber-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-200">
+                  <span className="rounded-full bg-amber-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--status-playing)]">
                     Playing
                   </span>
                 )}
@@ -430,7 +430,7 @@ export default function HostSessionPage({
                           <Play className="h-5 w-5" /> Start tournament
                         </button>
                         {startHint && (
-                          <p className="mt-2 text-sm text-amber-300">{startHint}</p>
+                          <p className="mt-2 text-sm text-[var(--status-playing)]">{startHint}</p>
                         )}
                       </div>
                     </div>
@@ -602,8 +602,8 @@ export default function HostSessionPage({
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                         roundComplete
-                          ? "bg-emerald-500/20 text-emerald-300"
-                          : "bg-amber-500/20 text-amber-200"
+                          ? "bg-emerald-500/20 text-[var(--status-done)]"
+                          : "bg-amber-500/20 text-[var(--status-playing)]"
                       }`}
                     >
                       {roundComplete ? "Round complete" : "In progress"}
@@ -646,7 +646,7 @@ export default function HostSessionPage({
               </div>
 
               {roundComplete ? (
-                <p className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-2.5 text-sm font-medium text-emerald-300">
+                <p className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-2.5 text-sm font-medium text-[var(--status-done)]">
                   {isLastGame
                     ? "All scores in — crown the winners when you’re ready."
                     : `All scores in — start ${nextGame?.title ?? "the next game"} when you’re ready.`}
@@ -975,7 +975,7 @@ export default function HostSessionPage({
             <Play className="h-5 w-5" /> Start tournament
           </button>
           {startHint && (
-            <p className="mt-2 text-center text-xs text-amber-300">{startHint}</p>
+            <p className="mt-2 text-center text-xs text-[var(--status-playing)]">{startHint}</p>
           )}
         </div>
       )}

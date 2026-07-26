@@ -10,7 +10,7 @@ import { OneSecondChallenge } from "@/games/OneSecondChallenge";
 import { StroopChallenge } from "@/games/StroopChallenge";
 import { TypingRace } from "@/games/TypingRace";
 import { SpeedPuzzle } from "@/games/SpeedPuzzle";
-import { WordScramble } from "@/games/WordScramble";
+import { LogoRemix } from "@/games/LogoRemix";
 import { TriviaQuiz } from "@/games/TriviaQuiz";
 import { useTournamentStore } from "@/store/useTournamentStore";
 import type { GameId } from "@/types/tournament";
@@ -24,7 +24,7 @@ const GAME_COMPONENTS: Record<GameId, React.ComponentType> = {
   stroop: StroopChallenge,
   typing: TypingRace,
   "speed-puzzle": SpeedPuzzle,
-  "word-scramble": WordScramble,
+  "logo-remix": LogoRemix,
   trivia: TriviaQuiz,
 };
 

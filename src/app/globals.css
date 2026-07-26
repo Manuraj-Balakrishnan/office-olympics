@@ -25,6 +25,14 @@
   --accent-3: #2a3142;
   --accent-soft: #e8ff9a;
   --accent-warm: #ff8f5c;
+  --ok-fg: #d1fae5;
+  --bad-fg: #fecaca;
+  --delta-fg: #34d399;
+  --diff-easy: #6ee7b7;
+  --diff-medium: #fcd34d;
+  --diff-hard: #fda4af;
+  --status-playing: #fde68a;
+  --status-done: #6ee7b7;
 
   --radius: 1rem;
   --font-display: "Poppins", system-ui, sans-serif;
@@ -44,10 +52,21 @@
   --border: rgb(10 12 16 / 0.1);
   --border-strong: rgb(10 12 16 / 0.16);
 
-  --primary-from: #9fd00f;
-  --primary-to: #b8e62e;
+  --primary-from: #7eb50c;
+  --primary-to: #9fd00f;
   --primary-fg: #0a0c10;
   --ring: #8bc20a;
+
+  /* Readable on light surfaces (dark mode keeps the soft lime) */
+  --accent-soft: #5f7a00;
+  --ok-fg: #047857;
+  --bad-fg: #b91c1c;
+  --delta-fg: #059669;
+  --diff-easy: #047857;
+  --diff-medium: #b45309;
+  --diff-hard: #be123c;
+  --status-playing: #b45309;
+  --status-done: #047857;
 
   --glow-1: color-mix(in srgb, var(--primary-from) 18%, transparent);
   --glow-2: color-mix(in srgb, var(--accent-2) 10%, transparent);
@@ -60,6 +79,15 @@
   --color-muted: var(--fg-muted);
   --color-card: var(--bg-card);
   --color-elevated: var(--bg-elevated);
+  /* Theme-aware surface tones — % of --fg */
+  --color-tone-3: color-mix(in srgb, var(--fg) 3%, transparent);
+  --color-tone-4: color-mix(in srgb, var(--fg) 4%, transparent);
+  --color-tone-5: color-mix(in srgb, var(--fg) 5%, transparent);
+  --color-tone-6: color-mix(in srgb, var(--fg) 6%, transparent);
+  --color-tone-8: color-mix(in srgb, var(--fg) 8%, transparent);
+  --color-tone-10: color-mix(in srgb, var(--fg) 10%, transparent);
+  --color-tone-16: color-mix(in srgb, var(--fg) 16%, transparent);
+  --color-tone-20: color-mix(in srgb, var(--fg) 20%, transparent);
   --font-sans: var(--font-body);
   --font-display: var(--font-display);
 }
@@ -338,9 +366,9 @@ a.header-control {
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgb(255 255 255 / 0.04) 25%,
-    rgb(255 255 255 / 0.1) 50%,
-    rgb(255 255 255 / 0.04) 75%
+    color-mix(in srgb, var(--fg) 4%, transparent) 25%,
+    color-mix(in srgb, var(--fg) 10%, transparent) 50%,
+    color-mix(in srgb, var(--fg) 4%, transparent) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
@@ -440,14 +468,15 @@ a.header-control {
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.16em;
-  color: var(--primary-from);
+  /* Always on the dark monitor glass */
+  color: #c8f542;
 }
 
 .home-prop--monitor .screen__dot {
   width: 0.35rem;
   height: 0.35rem;
   border-radius: 999px;
-  background: var(--primary-from);
+  background: #c8f542;
   animation: live-blink 1.4s ease-in-out infinite;
 }
 
@@ -457,7 +486,7 @@ a.header-control {
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: color-mix(in srgb, var(--fg) 70%, transparent);
+  color: rgb(244 246 248 / 0.7);
 }
 
 .home-prop--monitor .screen__board {
@@ -483,14 +512,14 @@ a.header-control {
   font-family: var(--font-display);
   font-size: 0.55rem;
   font-weight: 700;
-  color: color-mix(in srgb, var(--fg) 45%, transparent);
+  color: rgb(244 246 248 / 0.45);
 }
 
 .home-prop--monitor .screen__board .name {
   font-family: var(--font-display);
   font-size: 0.58rem;
   font-weight: 600;
-  color: var(--fg);
+  color: #f4f6f8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -519,7 +548,8 @@ a.header-control {
   font-size: 0.55rem;
   font-weight: 700;
   text-align: right;
-  color: var(--accent-soft);
+  /* Always on the dark monitor bezel — keep the soft lime */
+  color: #e8ff9a;
   font-variant-numeric: tabular-nums;
 }
 

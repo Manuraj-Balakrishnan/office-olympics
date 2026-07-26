@@ -324,16 +324,20 @@ export function MemoryMatch() {
     <GameShell
       gameId="memory"
       title="Memory Match"
-      durationSec={90}
+      durationSec={60}
       supportsHuddle
       hideTimer
+      onTimeUp={() => {
+        if (finalized.current || pendingClear.current) return;
+        finalize(false, elapsedNow());
+      }}
       results={
         results ? (
           <ResultsScreen gameId="memory" title="Memory Match" results={results} />
         ) : undefined
       }
     >
-      {({ participants, phase: shellPhase, finish }) => {
+      {({ participants, phase: shellPhase, finish, remainingMs }) => {
         participantsRef.current = participants;
         finishRef.current = finish;
         if (results || shellPhase !== "playing") return null;
@@ -372,6 +376,18 @@ export function MemoryMatch() {
               </div>
 
               <div className="flex items-end gap-3 sm:gap-4">
+                <div className="text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--fg-muted)]">
+                    Time
+                  </p>
+                  <p
+                    className={`font-display text-xl font-extrabold tabular-nums leading-none sm:text-2xl ${
+                      remainingMs < 15_000 ? "text-amber-300" : ""
+                    }`}
+                  >
+                    {(remainingMs / 1000).toFixed(0)}s
+                  </p>
+                </div>
                 <div className="text-right">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--fg-muted)]">
                     Moves

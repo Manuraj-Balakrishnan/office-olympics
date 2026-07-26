@@ -235,10 +235,10 @@ export function SpotTheDifference() {
 
   const difficultyTone =
     pair.difficulty === "easy"
-      ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
+      ? "border-emerald-500/35 bg-emerald-500/15 text-[var(--diff-easy)]"
       : pair.difficulty === "medium"
-        ? "border-amber-400/40 bg-amber-500/15 text-amber-300"
-        : "border-rose-400/40 bg-rose-500/15 text-rose-300";
+        ? "border-amber-500/35 bg-amber-500/15 text-[var(--diff-medium)]"
+        : "border-rose-500/35 bg-rose-500/15 text-[var(--diff-hard)]";
 
   /** Dark art (pirates) needs a dark frame; light art stays paper-white. */
   const darkArt = pair.id === "sd-pirates";
@@ -302,7 +302,7 @@ export function SpotTheDifference() {
                     <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--fg-muted)]">
                       Found
                     </p>
-                    <p className="font-display text-xl font-bold tabular-nums leading-none text-emerald-400 sm:text-3xl">
+                    <p className="font-display text-xl font-bold tabular-nums leading-none text-[var(--delta-fg)] sm:text-3xl">
                       {found.length}
                       <span className="text-sm text-[var(--fg-muted)] sm:text-lg">
                         /{total}

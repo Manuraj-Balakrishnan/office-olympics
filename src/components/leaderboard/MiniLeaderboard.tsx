@@ -44,7 +44,7 @@ export function MiniLeaderboard({ collapsible = true }: { collapsible?: boolean 
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{row.participant.name}</p>
                 {row.lastDelta > 0 && (
-                  <p className="text-xs text-emerald-400">+{row.lastDelta}</p>
+                  <p className="text-xs text-[var(--delta-fg)]">+{row.lastDelta}</p>
                 )}
               </div>
               <span
@@ -61,7 +61,7 @@ export function MiniLeaderboard({ collapsible = true }: { collapsible?: boolean 
         )}
       </ul>
       {collapsible && (
-        <p className="text-xs text-[var(--fg-muted)]">Ranks animate as scores update.</p>
+        <p className="text-xs text-[var(--fg-muted)]">Ranks updates as scores updates.</p>
       )}
     </aside>
   );

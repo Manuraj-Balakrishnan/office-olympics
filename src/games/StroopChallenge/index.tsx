@@ -20,6 +20,19 @@ const INK: Record<ColorWord, string> = {
   PURPLE: "#a855f7",
 };
 
+/**
+ * Raw score (clamped ≤1000):
+ * - 10 pts per correct tap
+ * - −5 per miss
+ * Elite pace ~100 correct in 90s → 1000.
+ */
+const POINTS_PER_CORRECT = 10;
+const MISS_PENALTY = 5;
+
+function computeScore(correct: number, wrong: number) {
+  return Math.max(0, correct * POINTS_PER_CORRECT - wrong * MISS_PENALTY);
+}
+
 /** More incongruent trials as the run goes on — harder to autopilot. */
 function nextTrial(answered: number) {
   const word = COLOR_WORDS[Math.floor(Math.random() * COLOR_WORDS.length)]!;
@@ -42,33 +55,37 @@ export function StroopChallenge() {
   const assistMode = useTournamentStore((s) => s.settings.assistMode);
   const [trial, setTrial] = useState(() => nextTrial(0));
   const [correct, setCorrect] = useState(0);
+  const [wrong, setWrong] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
+  const [score, setScore] = useState(0);
   const [flash, setFlash] = useState<Flash | null>(null);
   const [results, setResults] = useState<ResultRow[] | null>(null);
 
   const correctRef = useRef(0);
+  const wrongRef = useRef(0);
   const attemptsRef = useRef(0);
   const streakRef = useRef(0);
   const bestStreakRef = useRef(0);
+  const scoreRef = useRef(0);
   const flashId = useRef(0);
   const participantsRef = useRef<ResultRow["participant"][]>([]);
   const finishRef = useRef<(() => void) | null>(null);
   const finalized = useRef(false);
 
-  const finalize = (finalCorrect: number) => {
+  const finalize = (finalScore: number) => {
     if (finalized.current) return;
     finalized.current = true;
     const acc =
       attemptsRef.current > 0
-        ? Math.round((finalCorrect / attemptsRef.current) * 100)
+        ? Math.round((correctRef.current / attemptsRef.current) * 100)
         : 0;
     setResults(
       participantsRef.current.map((p) => ({
         participant: p,
-        score: finalCorrect,
-        detail: `${finalCorrect} correct · ${acc}% · streak ×${bestStreakRef.current}`,
+        score: finalScore,
+        detail: `${correctRef.current} correct · ${acc}% · streak ×${bestStreakRef.current}`,
       })),
     );
     finishRef.current?.();
@@ -99,9 +116,15 @@ export function StroopChallenge() {
       }
     } else {
       play("wrong");
+      wrongRef.current += 1;
+      setWrong(wrongRef.current);
       streakRef.current = 0;
       setStreak(0);
     }
+
+    const nextScore = computeScore(correctRef.current, wrongRef.current);
+    scoreRef.current = nextScore;
+    setScore(nextScore);
 
     setTrial(nextTrial(attemptsRef.current));
   };
@@ -111,7 +134,7 @@ export function StroopChallenge() {
       gameId="stroop"
       title="Stroop Challenge"
       durationSec={90}
-      onTimeUp={() => finalize(correctRef.current)}
+      onTimeUp={() => finalize(scoreRef.current)}
       results={
         results ? (
           <ResultsScreen gameId="stroop" title="Stroop Challenge" results={results} />
@@ -126,11 +149,12 @@ export function StroopChallenge() {
         return (
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 px-4 py-8">
             <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-[var(--fg-muted)]">
-              <span className="rounded-xl border border-[var(--border)] bg-tone-5 px-3 py-1.5 font-display font-bold text-[var(--fg)]">
-                {correct} correct
+              <span className="rounded-xl border border-[var(--border)] bg-tone-5 px-3 py-1.5 font-display text-base font-bold tabular-nums text-[var(--fg)]">
+                {score}
               </span>
               <span className="rounded-xl border border-[var(--border)] bg-tone-5 px-3 py-1.5">
-                {attempts} taps
+                {correct} correct
+                {wrong > 0 ? ` · ${wrong} miss` : ""}
               </span>
               <span className="rounded-xl border border-[var(--border)] bg-tone-5 px-3 py-1.5">
                 Best ×{bestStreak}

@@ -140,7 +140,7 @@ export const TRIVIA_QUESTIONS: TriviaQuestion[] = [
   },
 ];
 
-export function pickTrivia(count = 15): TriviaQuestion[] {
+export function pickTrivia(count = 10): TriviaQuestion[] {
   const shuffled = [...TRIVIA_QUESTIONS].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 }

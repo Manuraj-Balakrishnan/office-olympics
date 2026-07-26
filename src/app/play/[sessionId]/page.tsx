@@ -261,18 +261,18 @@ export default function PlaySessionPage({
         </PageItem>
       )}
 
-      {session.status === "active" && (
-        <PageItem>
-          <PerGameTops games={gameResults} />
-        </PageItem>
-      )}
-
       {session.status !== "lobby" && (
         <PageItem>
           <OverallLeaderboard
             rows={board}
             highlightId={session.mode === "teams" ? me.teamId : me.id}
           />
+        </PageItem>
+      )}
+
+      {session.status === "active" && (
+        <PageItem>
+          <PerGameTops games={gameResults} />
         </PageItem>
       )}
 

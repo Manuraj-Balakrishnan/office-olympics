@@ -10,8 +10,8 @@ import {
   Music,
   Palette,
   Puzzle,
+  ScanSearch,
   Search,
-  Shuffle,
   Trophy,
   Zap,
   type LucideIcon,
@@ -31,7 +31,7 @@ const GAME_ICONS: Record<string, LucideIcon> = {
   Palette,
   Keyboard,
   Puzzle,
-  Shuffle,
+  ScanSearch,
   HelpCircle,
 };
 
@@ -204,8 +204,7 @@ export function PerGameTops({
         {list.map((g) => {
           const rows = showFullRankings
             ? g.rankings.filter((r) => r.done)
-            : g.top;
-          const winner = rows[0];
+            : g.top.slice(0, 3);
           return (
             <li
               key={g.gameId}
@@ -215,48 +214,24 @@ export function PerGameTops({
                   : ""
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate font-display text-sm font-bold sm:text-base">
-                      {g.title}
-                    </p>
-                    {g.isCurrent && (
-                      <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--primary-from)_20%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--primary-from)]">
-                        Live
-                      </span>
-                    )}
-                  </div>
-                  {!showFullRankings && winner && (
-                    <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-[var(--fg-muted)] sm:text-sm">
-                      <span>{MEDAL[0]}</span>
-                      <PlayerAvatar
-                        avatar={winner.emoji}
-                        name={winner.name}
-                        size="xs"
-                        rounded="rounded-md"
-                      />
-                      <span className="truncate">{winner.name}</span>
-                    </p>
-                  )}
-                </div>
-                {!showFullRankings && winner && (
-                  <span
-                    className="shrink-0 font-display text-lg font-extrabold tabular-nums"
-                    style={{ color: winner.color }}
-                  >
-                    {winner.score}
+              <div className="flex items-center gap-2">
+                <p className="truncate font-display text-sm font-bold sm:text-base">
+                  {g.title}
+                </p>
+                {g.isCurrent && (
+                  <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--primary-from)_20%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--primary-from)]">
+                    Live
                   </span>
                 )}
               </div>
-              {showFullRankings && rows.length > 0 && (
+              {rows.length > 0 ? (
                 <ol className="mt-2 space-y-1">
                   {rows.map((row, i) => (
                     <li
                       key={row.playerId}
                       className="flex items-center gap-2 text-sm"
                     >
-                      <span className="w-6">
+                      <span className="w-6 shrink-0">
                         {i < 3 ? MEDAL[i] : `#${i + 1}`}
                       </span>
                       <PlayerAvatar
@@ -277,8 +252,7 @@ export function PerGameTops({
                     </li>
                   ))}
                 </ol>
-              )}
-              {rows.length === 0 && (
+              ) : (
                 <p className="mt-1 text-xs text-[var(--fg-muted)]">
                   Waiting for first score…
                 </p>

@@ -10,8 +10,9 @@ import { useSound } from "@/hooks/useSound";
 
 type Step = "ready" | "flash" | "questions";
 
-const SCENES_PER_GAME = 3;
-const FLASH_MS = 3000;
+const SCENES_PER_GAME = 2;
+const POINTS_PER_CORRECT = 100;
+const FLASH_MS = 5000;
 const READY_MS = 900;
 const FEEDBACK_MS = 750;
 
@@ -46,7 +47,6 @@ export function OneSecondChallenge() {
   const [step, setStep] = useState<Step>("ready");
   const [qIndex, setQIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const [answeredAt, setAnsweredAt] = useState(Date.now());
   const [picked, setPicked] = useState<number | null>(null);
   const [flashProgress, setFlashProgress] = useState(1);
   const [loadedIds, setLoadedIds] = useState<Set<string>>(() => new Set());
@@ -123,7 +123,7 @@ export function OneSecondChallenge() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, sceneReady, sceneIndex]);
 
-  // Exact 2s flash — image is already cached, so no wait
+  // Exact flash window — image is already cached, so no wait
   useEffect(() => {
     if (step !== "flash" || !flashArmed.current || finalized.current) return;
     const start = Date.now();
@@ -134,7 +134,6 @@ export function OneSecondChallenge() {
         window.clearInterval(tick);
         flashArmed.current = false;
         setStep("questions");
-        setAnsweredAt(Date.now());
       }
     }, 32);
     return () => window.clearInterval(tick);
@@ -159,7 +158,6 @@ export function OneSecondChallenge() {
     if (qIndex + 1 < round.questions.length) {
       setQIndex((i) => i + 1);
       setPicked(null);
-      setAnsweredAt(Date.now());
       return;
     }
     if (sceneIndex + 1 < rounds.length) {
@@ -174,12 +172,10 @@ export function OneSecondChallenge() {
     const question = round?.questions[qIndex];
     if (!question || finalized.current || picked !== null) return;
     setPicked(idx);
-    const elapsed = Date.now() - answeredAt;
-    const speedBonus = Math.max(0, Math.round((8000 - elapsed) / 80));
     let add = 0;
     if (idx === question.correctIndex) {
       play("correct");
-      add = 100 + speedBonus;
+      add = POINTS_PER_CORRECT;
       correctRef.current += 1;
     } else {
       play("wrong");

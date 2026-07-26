@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1B3A5F"/>
+      <stop offset="42%" stop-color="#E07A3D"/>
+      <stop offset="72%" stop-color="#F2B84B"/>
+      <stop offset="100%" stop-color="#F6D98A"/>
+    </linearGradient>
+    <linearGradient id="sunGlow" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#FFF3C4" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#F2B84B" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="hillBack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2F6B5A"/>
+      <stop offset="100%" stop-color="#1E4A3E"/>
+    </linearGradient>
+    <linearGradient id="hillFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3D8B6E"/>
+      <stop offset="100%" stop-color="#245C4A"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE08A"/>
+      <stop offset="55%" stop-color="#E8B23A"/>
+      <stop offset="100%" stop-color="#B87A12"/>
+    </linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F2F4F7"/>
+      <stop offset="55%" stop-color="#C5CCD6"/>
+      <stop offset="100%" stop-color="#8A93A1"/>
+    </linearGradient>
+    <linearGradient id="bronze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8B089"/>
+      <stop offset="55%" stop-color="#C67A3A"/>
+      <stop offset="100%" stop-color="#8A4A22"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="400" height="400" fill="url(#sky)"/>
+
+  <!-- Sun -->
+  <circle cx="300" cy="118" r="54" fill="url(#sunGlow)"/>
+  <circle cx="300" cy="118" r="28" fill="#FFE9A8"/>
+
+  <!-- Distant hills -->
+  <path d="M0 230 C60 200 110 215 160 195 C210 175 250 210 310 198 C360 188 385 205 400 215 L400 400 L0 400 Z" fill="url(#hillBack)"/>
+  <path d="M0 268 C70 240 120 255 180 242 C240 228 280 262 340 250 C370 244 390 255 400 262 L400 400 L0 400 Z" fill="url(#hillFront)"/>
+
+  <!-- Track lanes -->
+  <path d="M0 320 C80 300 140 310 200 305 C270 298 330 315 400 308 L400 400 L0 400 Z" fill="#3A4556"/>
+  <path d="M0 338 C90 322 150 330 210 326 C280 320 340 335 400 330" stroke="#F2B84B" stroke-width="3" stroke-dasharray="14 10" opacity="0.55"/>
+  <path d="M0 358 C90 344 150 350 210 348 C280 344 340 356 400 352" stroke="#F2B84B" stroke-width="2" stroke-dasharray="10 12" opacity="0.35"/>
+
+  <!-- Podium -->
+  <rect x="88" y="248" width="72" height="110" rx="4" fill="url(#silver)"/>
+  <rect x="160" y="210" width="80" height="148" rx="4" fill="url(#gold)"/>
+  <rect x="240" y="268" width="72" height="90" rx="4" fill="url(#bronze)"/>
+
+  <!-- Podium faces -->
+  <text x="124" y="312" text-anchor="middle" font-family="Georgia, serif" font-size="36" font-weight="700" fill="#5A6575">2</text>
+  <text x="200" y="290" text-anchor="middle" font-family="Georgia, serif" font-size="44" font-weight="700" fill="#8A5A08">1</text>
+  <text x="276" y="324" text-anchor="middle" font-family="Georgia, serif" font-size="32" font-weight="700" fill="#6A3A18">3</text>
+
+  <!-- Trophy on gold -->
+  <g transform="translate(176 148)">
+    <path d="M12 52 h24 v8 c0 10 -6 16 -12 16 s-12 -6 -12 -16 z" fill="#E8B23A"/>
+    <rect x="20" y="44" width="8" height="12" rx="2" fill="#FFE08A"/>
+    <path d="M8 8 h32 v20 c0 14 -8 24 -16 24 S8 42 8 28 Z" fill="url(#gold)"/>
+    <path d="M8 14 c-10 2 -14 12 -8 20" stroke="#E8B23A" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M40 14 c10 2 14 12 8 20" stroke="#E8B23A" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <circle cx="24" cy="22" r="6" fill="#FFF3C4" opacity="0.7"/>
+  </g>
+
+  <!-- Medals -->
+  <g transform="translate(108 210)">
+    <path d="M18 0 l6 14 h-12 z" fill="#31BBAC"/>
+    <circle cx="18" cy="28" r="14" fill="url(#silver)" stroke="#E8ECF2" stroke-width="2"/>
+    <text x="18" y="33" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#5A6575">2</text>
+  </g>
+  <g transform="translate(258 230)">
+    <path d="M18 0 l6 14 h-12 z" fill="#E07A3D"/>
+    <circle cx="18" cy="28" r="14" fill="url(#bronze)" stroke="#E8B089" stroke-width="2"/>
+    <text x="18" y="33" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#5A2E10">3</text>
+  </g>
+
+  <!-- Confetti -->
+  <circle cx="48" cy="70" r="5" fill="#31BBAC"/>
+  <circle cx="86" cy="42" r="4" fill="#E07A3D"/>
+  <circle cx="140" cy="58" r="3.5" fill="#F2B84B"/>
+  <circle cx="360" cy="56" r="5" fill="#31BBAC"/>
+  <circle cx="330" cy="28" r="3.5" fill="#E07A3D"/>
+  <rect x="62" y="96" width="10" height="4" rx="1" fill="#F2B84B" transform="rotate(-25 67 98)"/>
+  <rect x="350" y="90" width="10" height="4" rx="1" fill="#31BBAC" transform="rotate(30 355 92)"/>
+  <rect x="28" y="130" width="8" height="3" rx="1" fill="#E07A3D" transform="rotate(15 32 131)"/>
+  <rect x="372" y="140" width="8" height="3" rx="1" fill="#F2B84B" transform="rotate(-20 376 141)"/>
+  <path d="M110 88 l6 2 -4 6 -2 -6 z" fill="#FFF3C4"/>
+  <path d="M250 48 l6 2 -4 6 -2 -6 z" fill="#31BBAC"/>
+  <path d="M380 110 l6 2 -4 6 -2 -6 z" fill="#E07A3D"/>
+
+  <!-- Banner -->
+  <rect x="70" y="18" width="260" height="36" rx="10" fill="#0F1A28" opacity="0.55"/>
+  <text x="200" y="42" text-anchor="middle" font-family="Georgia, serif" font-size="18" font-weight="700" fill="#F6D98A" letter-spacing="2">OFFICE OLYMPICS</text>
+</svg>

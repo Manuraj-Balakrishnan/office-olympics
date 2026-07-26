@@ -282,7 +282,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 /** Pick N distinct scenes for one playthrough. */
-export function pickOneSecondRounds(count = 3): OneSecondRound[] {
+export function pickOneSecondRounds(count = 2): OneSecondRound[] {
   return shuffle(ONE_SECOND_ROUNDS).slice(0, Math.min(count, ONE_SECOND_ROUNDS.length));
 }
 

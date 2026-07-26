@@ -44,13 +44,13 @@ const PADS = [
 type SfxSimon = "simon0" | "simon1" | "simon2" | "simon3";
 type Turn = "idle" | "watch" | "repeat" | "cleared" | "miss";
 
+const MAX_STEPS = 10;
+
 /** Classic Simon: playback speeds up as the chain grows. */
 function timingFor(length: number) {
   if (length <= 3) return { on: 460, gap: 160, lead: 520 };
   if (length <= 6) return { on: 380, gap: 130, lead: 420 };
-  if (length <= 10) return { on: 300, gap: 100, lead: 360 };
-  if (length <= 14) return { on: 240, gap: 80, lead: 300 };
-  return { on: 190, gap: 60, lead: 260 };
+  return { on: 300, gap: 100, lead: 360 };
 }
 
 function sleep(ms: number, gen: number, getGen: () => number) {
@@ -122,22 +122,25 @@ export function SimonPattern() {
   );
 
   const endGame = useCallback(
-    (finalScore: number) => {
+    (finalScore: number, outcome: "miss" | "cleared" = "miss") => {
       if (finalized.current) return;
       finalized.current = true;
       genRef.current += 1;
       if (playerFlashTimer.current) window.clearTimeout(playerFlashTimer.current);
       if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
-      setTurn("miss");
+      setTurn(outcome === "cleared" ? "cleared" : "miss");
       setLit(null);
-      play("wrong");
-      setBoardPulse("bad");
+      if (outcome === "miss") play("wrong");
+      setBoardPulse(outcome === "cleared" ? "ok" : "bad");
       window.setTimeout(() => setBoardPulse(null), 520);
       setResults(
         participantsRef.current.map((p) => ({
           participant: p,
           score: finalScore,
-          detail: `${finalScore} step${finalScore === 1 ? "" : "s"}`,
+          detail:
+            outcome === "cleared"
+              ? `Perfect — ${finalScore}/${MAX_STEPS}`
+              : `${finalScore} step${finalScore === 1 ? "" : "s"}`,
         })),
       );
       finishRef.current?.();
@@ -169,17 +172,24 @@ export function SimonPattern() {
       setScore(newScore);
       setPlayerIdx(nextIdx);
       setTurn("cleared");
-      play(newScore >= 10 ? "fanfare" : newScore >= 5 ? "complete" : "correct");
+      play(newScore >= MAX_STEPS ? "fanfare" : newScore >= 5 ? "complete" : "correct");
       setBoardPulse("ok");
       window.setTimeout(() => setBoardPulse(null), 420);
 
-      const delay = newScore >= 10 ? 900 : 700;
+      if (newScore >= MAX_STEPS) {
+        advanceTimer.current = window.setTimeout(() => {
+          advanceTimer.current = null;
+          endGame(newScore, "cleared");
+        }, 900);
+        return;
+      }
+
       advanceTimer.current = window.setTimeout(() => {
         advanceTimer.current = null;
         if (finalized.current) return;
         const next = [...seq, Math.floor(Math.random() * 4)];
         void playSequence(next);
-      }, delay);
+      }, 700);
     } else {
       setPlayerIdx(nextIdx);
     }
@@ -208,8 +218,8 @@ export function SimonPattern() {
         : turn === "repeat"
           ? "Your turn — repeat it!"
           : turn === "cleared"
-            ? score >= 10
-              ? `Elite! ${score} steps`
+            ? score >= MAX_STEPS
+              ? `Perfect! ${MAX_STEPS}/${MAX_STEPS}`
               : score >= 5
                 ? `Nice chain — ${score}!`
                 : `Cleared ${score} — next up…`
@@ -389,7 +399,7 @@ export function SimonPattern() {
             </motion.div>
 
             <p className="max-w-xs text-center text-xs leading-relaxed text-[var(--fg-muted)] sm:text-sm">
-              One miss ends the run. Playback gets faster as your chain grows — stay sharp.
+              Clear all {MAX_STEPS} steps to finish. One miss ends the run — playback speeds up as you climb.
             </p>
 
             {turn !== "idle" && (

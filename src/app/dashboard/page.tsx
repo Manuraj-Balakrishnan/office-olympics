@@ -10,6 +10,7 @@ import {
   Palette,
   Keyboard,
   Puzzle,
+  ScanSearch,
   Shuffle,
   HelpCircle,
   Check,
@@ -35,7 +36,7 @@ const ICONS: Record<string, LucideIcon> = {
   Palette,
   Keyboard,
   Puzzle,
-  Shuffle,
+  ScanSearch,
   HelpCircle,
 };
 

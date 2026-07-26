@@ -9,10 +9,12 @@ import { useSound } from "@/hooks/useSound";
 
 const PER_QUESTION_MS = 10000;
 const FEEDBACK_MS = 900;
+const QUESTION_COUNT = 10;
+const POINTS_PER_CORRECT = 100;
 
 export function TriviaQuiz() {
   const { play } = useSound();
-  const questions = useMemo(() => pickTrivia(15), []);
+  const questions = useMemo(() => pickTrivia(QUESTION_COUNT), []);
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [leftMs, setLeftMs] = useState(PER_QUESTION_MS);
@@ -110,13 +112,9 @@ export function TriviaQuiz() {
     lockedRef.current = true;
     setLocked(true);
     setPicked(optIndex);
-    const speedRatio = leftMs / PER_QUESTION_MS;
     if (optIndex === q.correctIndex) {
       play("correct");
-      // Hint trims the max speed bonus a bit so using it isn't free points.
-      const bonusScale = hintUsed ? 0.7 : 1;
-      const points = Math.round(100 + speedRatio * 100 * bonusScale);
-      setTimeout(() => advance(points), FEEDBACK_MS);
+      setTimeout(() => advance(POINTS_PER_CORRECT), FEEDBACK_MS);
     } else {
       play("wrong");
       setTimeout(() => advance(0), FEEDBACK_MS);
@@ -129,7 +127,7 @@ export function TriviaQuiz() {
     <GameShell
       gameId="trivia"
       title="Rapid-Fire Quiz"
-      durationSec={120}
+      durationSec={100}
       hideTimer
       results={
         results ? (
@@ -206,9 +204,9 @@ export function TriviaQuiz() {
                 const isWrongPick = picked === i && !isCorrect;
                 const feedbackClass = showFeedback
                   ? isCorrect
-                    ? "!border-emerald-400 !bg-emerald-500/25 !text-emerald-100 ring-2 ring-emerald-400/60"
+                    ? "!border-emerald-500 !bg-emerald-500/20 !text-[var(--ok-fg)] ring-2 ring-emerald-500/50"
                     : isWrongPick
-                      ? "!border-red-400 !bg-red-500/25 !text-red-100 ring-2 ring-red-400/60"
+                      ? "!border-red-500 !bg-red-500/20 !text-[var(--bad-fg)] ring-2 ring-red-500/50"
                       : "opacity-50"
                   : "";
                 return (
