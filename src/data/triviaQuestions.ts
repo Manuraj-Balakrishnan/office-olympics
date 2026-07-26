@@ -119,20 +119,13 @@ export const TRIVIA_QUESTIONS: TriviaQuestion[] = [
   },
   {
     id: "t16",
-    question: "How many minutes are in a typical 'coffee break' stereotype?",
-    options: ["2", "5", "15", "60"],
-    correctIndex: 2,
-    category: "Fun",
-  },
-  {
-    id: "t17",
     question: "Which programming language is known for its snake mascot?",
     options: ["Java", "Ruby", "Python", "Go"],
     correctIndex: 2,
     category: "Tech",
   },
   {
-    id: "t18",
+    id: "t17",
     question: "What color are the Olympic rings that represent Africa traditionally?",
     options: ["Blue", "Yellow", "Black", "Green"],
     correctIndex: 2,
