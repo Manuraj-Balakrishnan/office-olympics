@@ -322,8 +322,8 @@ export default function HostSessionPage({
   }
 
   return (
-    <PageEnter className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 py-5 sm:gap-6 sm:px-4 sm:py-8 lg:flex-row lg:gap-6">
-      <div className="min-w-0 flex-1 space-y-5 sm:space-y-7">
+    <PageEnter className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 py-5 sm:gap-6 sm:px-4 sm:py-8 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6">
+      <div className="min-w-0 flex-1 space-y-5 sm:space-y-7 lg:col-start-1">
         {/* Active header only — lobby uses the join stage as its header */}
         {session.status !== "lobby" && (
           <PageItem>
@@ -765,88 +765,11 @@ export default function HostSessionPage({
           </PageItem>
         )}
 
-        {/* Compact game order */}
-        {session.status === "active" && (
-          <PageItem>
-          <section className="card-surface !p-0 overflow-hidden">
-            <div className="flex items-end justify-between gap-3 border-b border-[var(--border)] px-3.5 py-3 sm:px-5 sm:py-3.5">
-              <div className="min-w-0">
-                <h3 className="font-display text-base font-bold sm:text-lg">Schedule</h3>
-                <p className="mt-0.5 hidden text-xs text-[var(--fg-muted)] sm:block">
-                  Now, done, and what’s next
-                </p>
-              </div>
-              <p className="shrink-0 rounded-full bg-tone-8 px-2 py-0.5 text-[11px] font-bold tabular-nums text-[var(--fg)] sm:px-2.5 sm:py-1 sm:text-xs">
-                {session.gameOrder.length}
-              </p>
-            </div>
-            <ol className="divide-y divide-[var(--border)]">
-              {session.gameOrder.map((gid, i) => {
-                const g = resolveGame(gid);
-                if (!g) return null;
-                const Icon = gameIconFor(g.icon);
-                const isLive = session.currentGameId === gid;
-                const done = session.playedGames.includes(gid);
-                const top = gameResults.find((r) => r.gameId === gid)?.top[0];
-                return (
-                  <li
-                    key={gid}
-                    className={`flex items-center gap-2.5 px-3.5 py-2.5 text-sm sm:gap-3 sm:px-5 sm:py-3 ${
-                      isLive
-                        ? "bg-[color-mix(in_srgb,var(--primary-from)_12%,transparent)]"
-                        : done
-                          ? "opacity-55"
-                          : "transition hover:bg-tone-4"
-                    }`}
-                  >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-tone-8 text-[11px] font-bold tabular-nums text-[var(--fg-muted)] sm:h-7 sm:w-7">
-                      {i + 1}
-                    </span>
-                    <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9 sm:rounded-xl ${
-                        isLive
-                          ? "bg-[color-mix(in_srgb,var(--primary-from)_22%,transparent)] text-[var(--primary-from)]"
-                          : "bg-tone-8 text-[var(--fg-muted)]"
-                      }`}
-                    >
-                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    </span>
-                    <span className="min-w-0 flex-1 truncate font-medium">{g.title}</span>
-                    {top && done && (
-                      <span className="hidden max-w-[40%] items-center gap-1 truncate text-xs text-[var(--fg-muted)] sm:inline-flex">
-                        <PlayerAvatar
-                          avatar={top.emoji}
-                          name={top.name}
-                          size="xs"
-                          rounded="rounded-md"
-                        />
-                        <span className="truncate">
-                          {top.name} · {top.score}
-                        </span>
-                      </span>
-                    )}
-                    <span
-                      className={`shrink-0 text-[10px] font-bold uppercase tracking-wide ${
-                        isLive
-                          ? "text-[var(--primary-from)]"
-                          : "text-[var(--fg-muted)]"
-                      }`}
-                    >
-                      {isLive ? "now" : done ? "done" : ""}
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-          </PageItem>
-        )}
-
       </div>
 
-      {/* Sidebar roster — active rounds only (lobby roster sits beside join card) */}
+      {/* Roster above Schedule on mobile; sticky sidebar on desktop */}
       {session.status === "active" && (
-        <aside className="w-full shrink-0 space-y-4 lg:sticky lg:top-20 lg:w-80 lg:self-start">
+        <aside className="w-full shrink-0 space-y-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-20 lg:self-start">
           <section className="card-surface !p-0 overflow-hidden">
             <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-3.5 py-3 sm:px-5 sm:py-3.5">
               <h3 className="flex min-w-0 items-center gap-2 font-display text-base font-bold sm:text-lg">
@@ -963,9 +886,86 @@ export default function HostSessionPage({
         </aside>
       )}
 
+      {/* Compact game order — below Players on mobile; main column on desktop */}
+      {session.status === "active" && (
+        <PageItem className="lg:col-start-1">
+          <section className="card-surface !p-0 overflow-hidden">
+            <div className="flex items-end justify-between gap-3 border-b border-[var(--border)] px-3.5 py-3 sm:px-5 sm:py-3.5">
+              <div className="min-w-0">
+                <h3 className="font-display text-base font-bold sm:text-lg">Schedule</h3>
+                <p className="mt-0.5 hidden text-xs text-[var(--fg-muted)] sm:block">
+                  Now, done, and what’s next
+                </p>
+              </div>
+              <p className="shrink-0 rounded-full bg-tone-8 px-2 py-0.5 text-[11px] font-bold tabular-nums text-[var(--fg)] sm:px-2.5 sm:py-1 sm:text-xs">
+                {session.gameOrder.length}
+              </p>
+            </div>
+            <ol className="divide-y divide-[var(--border)]">
+              {session.gameOrder.map((gid, i) => {
+                const g = resolveGame(gid);
+                if (!g) return null;
+                const Icon = gameIconFor(g.icon);
+                const isLive = session.currentGameId === gid;
+                const done = session.playedGames.includes(gid);
+                const top = gameResults.find((r) => r.gameId === gid)?.top[0];
+                return (
+                  <li
+                    key={gid}
+                    className={`flex items-center gap-2.5 px-3.5 py-2.5 text-sm sm:gap-3 sm:px-5 sm:py-3 ${
+                      isLive
+                        ? "bg-[color-mix(in_srgb,var(--primary-from)_12%,transparent)]"
+                        : done
+                          ? "opacity-55"
+                          : "transition hover:bg-tone-4"
+                    }`}
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-tone-8 text-[11px] font-bold tabular-nums text-[var(--fg-muted)] sm:h-7 sm:w-7">
+                      {i + 1}
+                    </span>
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9 sm:rounded-xl ${
+                        isLive
+                          ? "bg-[color-mix(in_srgb,var(--primary-from)_22%,transparent)] text-[var(--primary-from)]"
+                          : "bg-tone-8 text-[var(--fg-muted)]"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate font-medium">{g.title}</span>
+                    {top && done && (
+                      <span className="hidden max-w-[40%] items-center gap-1 truncate text-xs text-[var(--fg-muted)] sm:inline-flex">
+                        <PlayerAvatar
+                          avatar={top.emoji}
+                          name={top.name}
+                          size="xs"
+                          rounded="rounded-md"
+                        />
+                        <span className="truncate">
+                          {top.name} · {top.score}
+                        </span>
+                      </span>
+                    )}
+                    <span
+                      className={`shrink-0 text-[10px] font-bold uppercase tracking-wide ${
+                        isLive
+                          ? "text-[var(--primary-from)]"
+                          : "text-[var(--fg-muted)]"
+                      }`}
+                    >
+                      {isLive ? "now" : done ? "done" : ""}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        </PageItem>
+      )}
+
       {/* Mobile sticky CTAs */}
       {session.status === "lobby" && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] px-4 pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-3.5 backdrop-blur-xl sm:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] px-4 pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-3.5 backdrop-blur-xl sm:hidden lg:col-span-2">
           <button
             type="button"
             className={`btn-primary w-full !min-h-12 ${canStart ? "animate-pulse-ring" : ""}`}
@@ -980,11 +980,11 @@ export default function HostSessionPage({
         </div>
       )}
       {session.status === "lobby" && (
-        <div className="h-24 sm:hidden" aria-hidden />
+        <div className="h-24 sm:hidden lg:col-span-2" aria-hidden />
       )}
 
       {session.status === "active" && currentGame && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:hidden lg:col-span-2">
           <div className="flex flex-col gap-2">
             {roundComplete ? (
               isLastGame ? (
@@ -1065,7 +1065,7 @@ export default function HostSessionPage({
         </div>
       )}
       {session.status === "active" && currentGame && (
-        <div className="h-28 sm:hidden" aria-hidden />
+        <div className="h-28 sm:hidden lg:col-span-2" aria-hidden />
       )}
     </PageEnter>
   );
