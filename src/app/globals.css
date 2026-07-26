@@ -444,7 +444,7 @@ a.header-control {
 
 .home-prop--monitor {
   width: min(32vw, 280px);
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 11;
   padding: 0.55rem;
 }
 
@@ -796,7 +796,7 @@ a.header-control {
   }
 
   .home-prop--monitor {
-    right: -8% !important;
+    right: 4% !important;
     top: 10% !important;
     opacity: 0.55;
     width: 46vw;
