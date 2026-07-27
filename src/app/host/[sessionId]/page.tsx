@@ -322,7 +322,7 @@ export default function HostSessionPage({
   }
 
   return (
-    <PageEnter className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 py-5 sm:gap-6 sm:px-4 sm:py-8 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6">
+    <PageEnter className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 py-5 sm:gap-6 sm:px-4 sm:py-8 ">
       <div className="min-w-0 flex-1 space-y-5 sm:space-y-7 lg:col-start-1">
         {/* Active header only — lobby uses the join stage as its header */}
         {session.status !== "lobby" && (
