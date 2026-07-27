@@ -110,7 +110,7 @@ export const GAMES: GameDefinition[] = [
       "Type the paragraph exactly as shown.",
       "Green = correct letter; red = typo.",
       "Finish the whole paragraph to lock your score.",
-      "Score = WPM × accuracy × 12 (~83 WPM @ 100% = perfect).",
+      "Score = WPM × accuracy × 14 (~71 WPM @ 100% = perfect).",
     ],
     icon: "Keyboard",
     difficulty: "Medium",
