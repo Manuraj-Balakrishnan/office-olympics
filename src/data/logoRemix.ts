@@ -26,7 +26,6 @@ export const LOGO_CATALOG: LogoEntry[] = [
   { id: "instagram", brand: "Instagram", file: "instagram.svg", color: "#E4405F" },
   { id: "dropbox", brand: "Dropbox", file: "dropbox.svg", color: "#0061FF" },
   { id: "airbnb", brand: "Airbnb", file: "airbnb.svg", color: "#FF5A5F" },
-  { id: "cocacola", brand: "Coca-Cola", file: "cocacola.svg", color: "#F40009" },
   { id: "facebook", brand: "Facebook", file: "facebook.svg", color: "#1877F2" },
   { id: "github", brand: "GitHub", file: "github.svg", color: "#181717" },
   { id: "tesla", brand: "Tesla", file: "tesla.svg", color: "#CC0000" },
