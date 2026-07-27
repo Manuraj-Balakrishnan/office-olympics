@@ -34,7 +34,7 @@ export function clampRawScore(gameId: GameId, rawScore: number): number {
       // 10 logos × 100 pts → max 1000
       return Math.max(0, Math.min(1000, Math.round(n)));
     case "trivia":
-      // 10 questions × 100 pts → max 1000
+      // 10 questions × 100 pts − 25 per hint → max 1000
       return Math.max(0, Math.min(1000, Math.round(n)));
     default:
       return Math.max(0, Math.round(n));
@@ -54,7 +54,7 @@ export function clampRawScore(gameId: GameId, rawScore: number): number {
  * - typing: round(wpm * accuracy/100 * 14), wpm capped at 150
  * - speed-puzzle: points 0–1000 (L1≤400 + L2≤600; faster clears → higher)
  * - logo-remix: 100 pts per correct brand × 10 (max 1000)
- * - trivia: 100 pts per correct × 10 (max 1000)
+ * - trivia: 100 pts per correct × 10 − 25 per hint used (max 1000)
  */
 export function normalizeToThousand(
   gameId: GameId,

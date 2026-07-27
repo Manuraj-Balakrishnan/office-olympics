@@ -157,8 +157,8 @@ export const GAMES: GameDefinition[] = [
     howToPlay: [
       "10 questions — 10 seconds each.",
       "Tap before the ring runs out. Green = correct, red = wrong.",
-      "Hint once per question removes 1 wrong answer.",
-      "Each correct answer = 100 points. Perfect run = 1000.",
+      "Hint once per question removes 1 wrong answer (−25 pts if you get it right).",
+      "Each correct answer = 100 points (75 with a hint). Perfect run = 1000.",
       "Wrong or timeout = no points for that question.",
     ],
     icon: "HelpCircle",

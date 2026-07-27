@@ -11,6 +11,8 @@ const PER_QUESTION_MS = 10000;
 const FEEDBACK_MS = 900;
 const QUESTION_COUNT = 10;
 const POINTS_PER_CORRECT = 100;
+/** Raw points subtracted when a hint is used on a correct answer. */
+const HINT_PENALTY = 25;
 
 export function TriviaQuiz() {
   const { play } = useSound();
@@ -114,7 +116,10 @@ export function TriviaQuiz() {
     setPicked(optIndex);
     if (optIndex === q.correctIndex) {
       play("correct");
-      setTimeout(() => advance(POINTS_PER_CORRECT), FEEDBACK_MS);
+      const points = hintUsed
+        ? POINTS_PER_CORRECT - HINT_PENALTY
+        : POINTS_PER_CORRECT;
+      setTimeout(() => advance(points), FEEDBACK_MS);
     } else {
       play("wrong");
       setTimeout(() => advance(0), FEEDBACK_MS);
@@ -194,7 +199,7 @@ export function TriviaQuiz() {
               onClick={useHint}
               className="btn-secondary !py-2 text-sm disabled:opacity-50"
             >
-              {hintUsed ? "Hint used" : "Hint · remove 1"}
+              {hintUsed ? "Hint used (−25)" : "Hint · −25"}
             </button>
             <div className="grid w-full gap-3 sm:grid-cols-2">
               {q.options.map((opt, i) => {
