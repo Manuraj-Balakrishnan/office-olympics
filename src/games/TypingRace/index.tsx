@@ -52,7 +52,8 @@ export function TypingRace() {
   const rawWpm = correctChars / 5 / elapsedMin;
   const wpm = Math.min(150, Math.round(rawWpm)); // hard cap honest elite WPM
   const progress = Math.min(1, input.length / sentence.length);
-  const score = Math.round(wpm * (accuracy / 100) * 10);
+  // ×12 so ~83 WPM @ 100% ≈ 1000 (was ×10 / 100 WPM)
+  const score = Math.round(wpm * (accuracy / 100) * 12);
   const caretIndex = Math.min(input.length, sentence.length);
   const hasTypo = input.length > 0 && input !== sentence.slice(0, input.length);
   statsRef.current = {

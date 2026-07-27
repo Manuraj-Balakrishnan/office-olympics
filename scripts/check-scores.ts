@@ -42,11 +42,11 @@ assert(normalizeToThousand("stroop", 500) === 500, "stroop mid");
 assert(clampRawScore("stroop", 9999) === 1000, "stroop raw cap");
 assert(normalizeToThousand("stroop", 250) === 250, "stroop 25 correct");
 
-// Typing: 100 WPM @ 100% = 1000
-assert(clampRawScore("typing", 99999) === 1500, "typing raw cap");
-assert(normalizeToThousand("typing", 1000) === 1000, "typing elite 100 WPM");
-assert(normalizeToThousand("typing", 830) === 830, "typing 83 WPM");
-assert(normalizeToThousand("typing", 1500) === 1000, "typing over-cap");
+// Typing: ~83 WPM @ 100% = 1000 (×12 multiplier)
+assert(clampRawScore("typing", 99999) === 1800, "typing raw cap");
+assert(normalizeToThousand("typing", 1000) === 1000, "typing ~83 WPM elite");
+assert(normalizeToThousand("typing", 720) === 720, "typing 60 WPM");
+assert(normalizeToThousand("typing", 1800) === 1000, "typing over-cap");
 
 // Speed puzzle: points 0–1000, faster solve earns more
 assert(normalizeToThousand("speed-puzzle", 1000) === 1000, "puzzle elite pts");

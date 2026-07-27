@@ -25,8 +25,8 @@ export function clampRawScore(gameId: GameId, rawScore: number): number {
       // 10 pts per correct − 5 per miss; ~100 net → 1000
       return Math.max(0, Math.min(1000, Math.round(n)));
     case "typing":
-      // WPM×accuracy×10; WPM capped at 150 → raw ≤1500
-      return Math.max(0, Math.min(1500, Math.round(n)));
+      // WPM×accuracy×12; WPM capped at 150 → raw ≤1800
+      return Math.max(0, Math.min(1800, Math.round(n)));
     case "speed-puzzle":
       // Points 0–1000 (L1 ≤400 + L2 ≤600; faster clears → higher)
       return Math.max(0, Math.min(1000, Math.round(n)));
@@ -51,7 +51,7 @@ export function clampRawScore(gameId: GameId, rawScore: number): number {
  * - spot-difference: (found/total)*800 + speed≤300 − 25×hints (1100 max)
  * - one-second: 100 pts per correct × 10 (2 scenes × 5; max 1000)
  * - stroop: 10 pts per correct − 5 per miss (elite ~100 → 1000)
- * - typing: round(wpm * accuracy/100 * 10), wpm capped at 150
+ * - typing: round(wpm * accuracy/100 * 12), wpm capped at 150
  * - speed-puzzle: points 0–1000 (L1≤400 + L2≤600; faster clears → higher)
  * - logo-remix: 100 pts per correct brand × 10 (max 1000)
  * - trivia: 100 pts per correct × 10 (max 1000)
@@ -86,7 +86,7 @@ export function normalizeToThousand(
       // Already 0–1000 (correct × 10)
       return clamp(raw);
     case "typing":
-      // 100 WPM @ 100% → raw 1000 → 1000; higher WPM still caps at 1000
+      // ~83 WPM @ 100% → raw 1000 → 1000; higher WPM still caps at 1000
       return clamp(raw);
     case "speed-puzzle":
       // Already scored as 0–1000 points (faster = higher)
